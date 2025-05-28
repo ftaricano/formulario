@@ -4,6 +4,13 @@ Configurações do Sistema de Adesão de Seguro
 import os
 from datetime import datetime
 
+# Carregar variáveis de ambiente do arquivo .env (se existir)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Carrega automaticamente o arquivo .env
+except ImportError:
+    pass  # python-dotenv não instalado, usar apenas variáveis de ambiente do sistema
+
 # Tentar importar streamlit para usar secrets
 try:
     import streamlit as st

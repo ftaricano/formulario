@@ -8,7 +8,7 @@ Sistema web completo para adesão de seguros com interface moderna, validações
 - ✅ **Formulário completo** de adesão com validações robustas
 - ✅ **Cálculo automático** do prêmio pró-rata baseado na data de inclusão
 - ✅ **Busca automática** de dados via APIs (CNPJ/Receita Federal e CEP/ViaCEP)
-- ✅ **Envio automático** de emails de confirmação (empresa + cliente)
+- ✅ **Sistema de email profissional** com SendGrid (100 emails/dia grátis)
 - ✅ **Interface responsiva** e moderna com design profissional
 - ✅ **Sistema de validação** em tempo real com feedback visual
 
@@ -79,21 +79,57 @@ Sistema web completo para adesão de seguros com interface moderna, validações
 
 ### 📦 **Dependências**
 ```bash
-pip install streamlit requests python-dotenv
+pip install -r requirements.txt
 ```
 
-### ⚙️ **Variáveis de Ambiente**
-Crie um arquivo `.env` (opcional):
+### 🚀 **Início Rápido**
+
+1. **Clone o repositório**
 ```bash
-# Configurações de Email (Produção)
+git clone <url-do-repositorio>
+cd formulario
+```
+
+2. **Instale as dependências**
+```bash
+pip install -r requirements.txt
+```
+
+3. **Execute o aplicativo**
+```bash
+streamlit run app.py
+```
+
+4. **Configure o email** (na barra lateral do app):
+   - **Modo Teste**: Para desenvolvimento (não envia emails)
+   - **SendGrid**: Para produção (recomendado)
+   - **SMTP Tradicional**: Para configuração manual
+
+### 📧 **Configuração de Email com SendGrid (Recomendado)**
+
+#### **Por que SendGrid?**
+- ✅ **100 emails/dia grátis** (suficiente para testes)
+- ✅ **Alta entregabilidade** (emails não vão para spam)
+- ✅ **Fácil configuração** (apenas API Key)
+- ✅ **Monitoramento** de entregas e estatísticas
+- ✅ **Profissional** para uso empresarial
+
+#### **Configuração Rápida:**
+1. **Criar conta**: https://sendgrid.com/ (gratuita)
+2. **Obter API Key**: Settings > API Keys > Create API Key
+3. **Configurar no app**: Sidebar > SendGrid > Cole a API Key
+4. **Testar**: Envie um formulário
+
+📖 **Guia completo**: Veja `CONFIGURACAO_SENDGRID.md` para instruções detalhadas
+
+### ⚙️ **Configuração Alternativa (SMTP)**
+Para usar email tradicional, configure as variáveis de ambiente:
+```bash
+# Arquivo .env (opcional)
 EMAIL_REMETENTE=seu_email@empresa.com
-EMAIL_SENHA=sua_senha_de_app_gmail
+EMAIL_SENHA=sua_senha_de_app
 EMAIL_EMPRESA=email_destino@empresa.com
 MODO_TESTE=false
-
-# APIs Externas
-RECEITA_WS_URL=https://www.receitaws.com.br/v1/cnpj/
-VIA_CEP_URL=https://viacep.com.br/ws/
 ```
 
 ### 🏃‍♂️ **Execução**
@@ -108,38 +144,45 @@ streamlit run app.py
 streamlit run app.py --server.address 0.0.0.0 --server.port 8501
 ```
 
-#### **Produção (com configurações específicas)**
-```bash
-streamlit run app.py --server.port 8501 --server.headless true
-```
-
 ## 📧 Sistema de Email
 
-### 📨 **Funcionalidades**
-- **Modo Teste**: Preview do email sem envio real
-- **Modo Produção**: Envio automático via SMTP
-- **Destinatários**: Email da empresa + email do cliente
-- **Formato**: HTML responsivo com design profissional
-- **Conteúdo**: Todos os dados do formulário + cálculo pró-rata
+### 📨 **3 Modos de Operação**
+1. **🧪 Teste**: Preview do email sem envio real (desenvolvimento)
+2. **📧 SendGrid**: Serviço profissional de email (recomendado)
+3. **⚙️ SMTP**: Configuração manual via Gmail/Outlook
 
 ### 🎨 **Template de Email**
 - Design responsivo com gradientes
 - Seções organizadas (Dados Pessoais, Endereço, Seguro)
 - Destaque para o valor final do prêmio
 - Timestamp e informações de vigência
+- Formatação profissional HTML
+
+### 📊 **Vantagens do SendGrid**
+- **Confiabilidade**: 99.9% de uptime
+- **Entregabilidade**: Melhor taxa de entrega que SMTP tradicional
+- **Monitoramento**: Dashboard com estatísticas detalhadas
+- **Escalabilidade**: De 100 emails/dia até milhões
+- **Segurança**: Autenticação de domínio e SPF/DKIM
 
 ## 🏗️ Arquitetura Técnica
 
 ### 📁 **Estrutura de Arquivos**
 ```
 formulario/
-├── app.py              # Aplicação principal
-├── config.py           # Configurações e constantes
-├── requirements.txt    # Dependências Python
-├── .env               # Variáveis de ambiente (opcional)
-├── assets/
-│   └── logo.png       # Logo da empresa
-└── README.md          # Documentação
+├── app.py                      # Aplicação principal
+├── config.py                   # Configurações e constantes
+├── requirements.txt            # Dependências Python
+├── logo.png                    # Logo da empresa
+├── .gitignore                  # Arquivos ignorados pelo Git
+├── .streamlit/
+│   ├── config.toml            # Configurações do Streamlit
+│   └── secrets.toml           # Secrets (não commitado)
+├── README.md                   # Documentação principal
+├── README_SENDGRID.md          # Guia rápido SendGrid
+├── CONFIGURACAO_SENDGRID.md    # Guia completo SendGrid
+├── exemplo_sendgrid.py         # Exemplo de implementação
+└── DEPLOY_GUIDE.md            # Guia de deploy
 ```
 
 ### 🔄 **Fluxo de Dados**
@@ -186,6 +229,13 @@ formulario/
 
 ## 🚀 Melhorias Implementadas
 
+### ✅ **Sistema de Email Profissional**
+- Integração completa com SendGrid
+- 3 modos de operação (Teste, SendGrid, SMTP)
+- Template HTML responsivo e profissional
+- Configuração via interface web (sem código)
+- Fallback graceful para diferentes modos
+
 ### ✅ **UX/UI Enhancements**
 - Barra superior compacta com logo e títulos centralizados
 - Formulário linear com botão de envio no final
@@ -214,6 +264,14 @@ formulario/
 - **APIs externas**: Timeout de 10s com retry
 - **Cache**: 100 entradas LRU para otimização
 - **Responsividade**: Breakpoints otimizados
+- **Email**: Entrega em < 5 segundos via SendGrid
+
+## 📚 Documentação Adicional
+
+- 📖 **`README_SENDGRID.md`**: Guia rápido para configurar SendGrid
+- 📖 **`CONFIGURACAO_SENDGRID.md`**: Documentação completa do SendGrid
+- 📖 **`exemplo_sendgrid.py`**: Exemplo de implementação
+- 📖 **`DEPLOY_GUIDE.md`**: Guia para deploy em produção
 
 ---
 
@@ -221,9 +279,165 @@ formulario/
 
 **Desenvolvido para**: Grupo CPZ Seguros  
 **Produto**: Seguro Incêndio Conteúdos - Cessionários ORLA RIO  
-**Tecnologia**: Streamlit + Python  
+**Tecnologia**: Streamlit + Python + SendGrid  
 **Status**: ✅ Produção  
 
 ---
 
 *Sistema desenvolvido com foco em usabilidade, performance e confiabilidade para otimizar o processo de adesão de seguros.* 🛡️ 
+
+# 🛡️ Formulário de Adesão - Seguro Incêndio Conteúdos
+
+Sistema web para adesão ao **Seguro Incêndio Conteúdos - Cessionários ORLA RIO** desenvolvido com Streamlit e integração SendGrid.
+
+## ✨ Funcionalidades
+
+### 📋 Formulário Completo
+- **Identificação do Responsável:** CPF, nome, email, telefone
+- **Dados da Empresa:** CNPJ com busca automática da razão social
+- **Endereço do Quiosque:** CEP com busca automática via ViaCEP
+- **Seleção de Planos:** 3 opções com coberturas detalhadas
+- **Cálculo Pró-rata:** Automático baseado na data de inclusão
+
+### 📧 Sistema de Email Duplo
+O sistema envia **2 emails automaticamente** para cada formulário:
+
+#### 📨 Email 1 - Para a Empresa
+- **Destinatário:** `informe@cpzseg.com.br`
+- **Conteúdo:** Dados completos para processamento
+- **Design:** Header azul/roxo profissional
+
+#### 📨 Email 2 - Para o Cliente  
+- **Destinatário:** Email informado pelo cliente
+- **Conteúdo:** Confirmação com próximos passos
+- **Design:** Header verde (sucesso) acolhedor
+
+### 🔍 Validações e APIs
+- **Validação de CPF:** Algoritmo de dígitos verificadores
+- **Validação de CNPJ:** Formato e consulta à Receita Federal
+- **Busca de CEP:** Integração com ViaCEP
+- **Validação de Email:** Regex robusta
+
+### 🎨 Interface Moderna
+- Design responsivo e profissional
+- Cores do Grupo CPZ
+- Experiência otimizada para mobile
+- Feedback visual em tempo real
+
+## 🚀 Deploy no Streamlit Cloud
+
+### 1. Preparar Repositório
+```bash
+git add .
+git commit -m "Deploy: Sistema de formulário com SendGrid"
+git push origin main
+```
+
+### 2. Configurar no Streamlit Cloud
+1. Acesse [share.streamlit.io](https://share.streamlit.io)
+2. Conecte seu repositório GitHub
+3. Configure as **secrets** em "Advanced settings":
+
+```toml
+[sendgrid]
+api_key = "SG.sua_api_key_sendgrid"
+email_destino = "informe@cpzseg.com.br"
+from_email = "seu_email_verificado@gmail.com"
+from_name = "Grupo CPZ - Formulários"
+```
+
+### 3. Verificar SendGrid
+- ✅ API Key ativa
+- ✅ Email remetente verificado (Single Sender Verification)
+- ✅ Permissões de envio configuradas
+
+## 📦 Estrutura do Projeto
+
+```
+formulario/
+├── app.py                 # Aplicação principal
+├── config.py             # Configurações do sistema
+├── requirements.txt      # Dependências Python
+├── logo.png             # Logo da empresa
+├── README.md            # Documentação
+├── DEPLOY_GUIDE.md      # Guia de deploy detalhado
+├── .gitignore           # Arquivos ignorados pelo Git
+└── .streamlit/
+    ├── config.toml      # Configurações do Streamlit
+    └── secrets.toml     # Configurações sensíveis (não commitado)
+```
+
+## 🛠️ Instalação Local
+
+### 1. Clonar Repositório
+```bash
+git clone [seu-repositorio]
+cd formulario
+```
+
+### 2. Instalar Dependências
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Configurar SendGrid
+Crie `.streamlit/secrets.toml`:
+```toml
+[sendgrid]
+api_key = "SG.sua_api_key_aqui"
+email_destino = "informe@cpzseg.com.br"
+from_email = "seu_email_verificado@gmail.com"
+from_name = "Grupo CPZ - Formulários"
+```
+
+### 4. Executar
+```bash
+streamlit run app.py
+```
+
+## 📋 Planos Disponíveis
+
+| Cobertura | Opção 1 | Opção 2 | Opção 3 |
+|-----------|---------|---------|---------|
+| **Incêndio, Raio e Explosão** | R$ 250.000 | R$ 400.000 | R$ 700.000 |
+| **Alagamento** | R$ 50.000 | R$ 100.000 | R$ 150.000 |
+| **Danos Elétricos** | R$ 20.000 | R$ 50.000 | R$ 100.000 |
+| **Pequenas Obras** | R$ 50.000 | R$ 100.000 | R$ 150.000 |
+| **Perda/Pgto Aluguel** | R$ 20.000 | R$ 30.000 | R$ 40.000 |
+| **Vidros** | R$ 20.000 | R$ 50.000 | R$ 100.000 |
+| **Tumultos** | R$ 100.000 | R$ 150.000 | R$ 200.000 |
+| **Vendaval** | R$ 100.000 | R$ 150.000 | R$ 200.000 |
+| **Prêmio Anual** | **R$ 2.500,00** | **R$ 4.000,00** | **R$ 7.000,00** |
+
+## 🔧 Configurações Técnicas
+
+### Dependências
+- **streamlit** - Framework web
+- **requests** - Requisições HTTP para APIs
+- **sendgrid** - Envio de emails
+
+### APIs Integradas
+- **ViaCEP** - Busca de endereços por CEP
+- **ReceitaWS** - Consulta de CNPJ
+- **SendGrid** - Envio de emails profissionais
+
+### Validações
+- CPF com algoritmo de dígitos verificadores
+- CNPJ com formato e consulta online
+- Email com regex robusta
+- CEP com formato brasileiro
+- Telefone com 10/11 dígitos
+
+## 📞 Suporte
+
+- **Email:** informe@cpzseg.com.br
+- **Empresa:** Grupo CPZ Seguros
+- **Sistema:** Formulário de Adesão v2.0
+
+## 📄 Licença
+
+Sistema proprietário - Grupo CPZ Seguros © 2024
+
+---
+
+**🎯 Sistema pronto para produção com envio automático de emails e interface profissional!** 

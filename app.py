@@ -10,6 +10,14 @@ from typing import Dict, Optional, Tuple
 import os
 from functools import lru_cache
 
+# Importações do SendGrid
+try:
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+    SENDGRID_AVAILABLE = True
+except ImportError:
+    SENDGRID_AVAILABLE = False
+
 # Importar configurações
 from config import (
     PLANOS_SEGURO, DATA_FINAL_VIGENCIA, EMAIL_CONFIG, API_URLS, 
@@ -550,25 +558,432 @@ def formatar_telefone(telefone: str) -> str:
     return telefone
 
 def formatar_valor_real(valor: float) -> str:
-    """Formata valor monetário no padrão brasileiro (R$ 1.234,56)"""
-    # Converte para string com 2 casas decimais
-    valor_str = f"{valor:.2f}"
+    """Formatar valor monetário em reais"""
+    try:
+        return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    except (ValueError, TypeError):
+        return "R$ 0,00"
+
+# ==================== SENDGRID EMAIL SENDER ====================
+
+class SendGridEmailSender:
+    def __init__(self, api_key=None):
+        """
+        Inicializa o cliente SendGrid
+        
+        Args:
+            api_key (str): API Key do SendGrid. Se None, busca em variável de ambiente
+        """
+        self.api_key = api_key or os.getenv('SENDGRID_API_KEY')
+        if not self.api_key:
+            raise ValueError("API Key do SendGrid não encontrada!")
+        
+        self.sg = SendGridAPIClient(api_key=self.api_key)
     
-    # Separa parte inteira e decimal
-    partes = valor_str.split('.')
-    parte_inteira = partes[0]
-    parte_decimal = partes[1]
+    def enviar_email_formulario(self, dados_formulario, email_destino="seguros@grupocp.com.br"):
+        """
+        Envia email com dados do formulário
+        
+        Args:
+            dados_formulario (dict): Dados do formulário preenchido
+            email_destino (str): Email de destino
+        """
+        try:
+            # Email remetente - tentar carregar do secrets.toml primeiro
+            remetente_email = "seu_email_verificado@gmail.com"  # padrão
+            remetente_nome = "Grupo CPZ - Formulários"
+            
+            try:
+                if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
+                    remetente_email = st.secrets["sendgrid"].get("from_email", remetente_email)
+                    remetente_nome = st.secrets["sendgrid"].get("from_name", remetente_nome)
+            except:
+                pass  # usar padrão se não conseguir carregar
+            
+            from_email = Email(remetente_email, remetente_nome)
+            
+            # Email destinatário
+            to_email = To(email_destino)
+            
+            # Assunto
+            subject = f"Nova Solicitação - Seguro Incêndio Conteúdos - {dados_formulario.get('nome_completo', 'N/A')}"
+            
+            # Conteúdo HTML do email
+            html_content = self._gerar_html_email(dados_formulario)
+            content = Content("text/html", html_content)
+            
+            # Criar email
+            mail = Mail(from_email, to_email, subject, content)
+            
+            # Enviar
+            response = self.sg.client.mail.send.post(request_body=mail.get())
+            
+            if response.status_code == 202:
+                return True, "Email enviado com sucesso!"
+            else:
+                return False, f"Erro ao enviar email. Status: {response.status_code}"
+                
+        except Exception as e:
+            return False, f"Erro ao enviar email: {str(e)}"
     
-    # Adiciona pontos de milhares na parte inteira
-    if len(parte_inteira) > 3:
-        # Inverte a string para facilitar a inserção dos pontos
-        parte_inteira_invertida = parte_inteira[::-1]
-        # Adiciona pontos a cada 3 dígitos
-        com_pontos = '.'.join([parte_inteira_invertida[i:i+3] for i in range(0, len(parte_inteira_invertida), 3)])
-        # Inverte de volta
-        parte_inteira = com_pontos[::-1]
+    def _gerar_html_email(self, dados):
+        """Gera HTML formatado para o email"""
+        # Extrair nome do plano corretamente
+        plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .section {{ margin-bottom: 25px; }}
+                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }}
+                .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
+                .label {{ font-weight: bold; color: #4a5568; }}
+                .value {{ color: #2d3748; }}
+                .highlight {{ background: #c6f6d5; padding: 15px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 20px 0; }}
+                .footer {{ text-align: center; margin-top: 20px; color: #718096; font-size: 12px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>🛡️ Seguro Incêndio Conteúdos - Cessionários ORLA RIO</h1>
+                    <p>Nova Solicitação Recebida</p>
+                    <p>Formulário preenchido em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}</p>
+                </div>
+                
+                <div class="content">
+                    <div class="section">
+                        <div class="section-title">👤 Dados Pessoais</div>
+                        <div class="info-row">
+                            <span class="label">Nome Completo:</span>
+                            <span class="value">{dados.get('nome_completo', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">CPF:</span>
+                            <span class="value">{formatar_cpf(dados.get('cpf', ''))}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">E-mail:</span>
+                            <span class="value">{dados.get('email', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Telefone:</span>
+                            <span class="value">{formatar_telefone(dados.get('telefone', ''))}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">CNPJ:</span>
+                            <span class="value">{formatar_cnpj(dados.get('cnpj', ''))}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Razão Social:</span>
+                            <span class="value">{dados.get('razao_social', 'N/A')}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">📍 Endereço do Quiosque</div>
+                        <div class="info-row">
+                            <span class="label">CEP:</span>
+                            <span class="value">{formatar_cep(dados.get('cep', ''))}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Logradouro:</span>
+                            <span class="value">{dados.get('logradouro', 'N/A')}, {dados.get('numero', 'N/A')}</span>
+                        </div>
+                        {f'<div class="info-row"><span class="label">Complemento:</span><span class="value">{dados.get("complemento", "")}</span></div>' if dados.get('complemento') else ''}
+                        <div class="info-row">
+                            <span class="label">Bairro:</span>
+                            <span class="value">{dados.get('bairro', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Cidade/Estado:</span>
+                            <span class="value">{dados.get('cidade', 'N/A')} - {dados.get('estado', 'N/A')}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">🛡️ Plano de Seguro</div>
+                        <div class="info-row">
+                            <span class="label">Plano Selecionado:</span>
+                            <span class="value">{plano_nome}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Data de Inclusão:</span>
+                            <span class="value">{datetime.strptime(dados.get('data_inclusao', ''), '%Y-%m-%d').strftime('%d/%m/%Y') if dados.get('data_inclusao') else 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Vigência até:</span>
+                            <span class="value">31/12/2025</span>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight">
+                        <h3 style="margin: 0 0 10px 0; color: #22543d;">💰 Cálculo Pró-rata</h3>
+                        <div class="info-row">
+                            <span class="label">Dias Restantes:</span>
+                            <span class="value">{dados.get('dias_restantes', 'N/A')} dias</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label"><strong>Prêmio Pró-rata:</strong></span>
+                            <span class="value"><strong>{formatar_valor_real(dados.get('premio_pro_rata', 0))}</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="footer">
+                        <p>Este email foi gerado automaticamente pelo sistema de adesão de seguros - Grupo CPZ</p>
+                        <p>Data/Hora UTC: {dados.get('timestamp_utc', 'N/A')}</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return html
     
-    return f"R$ {parte_inteira},{parte_decimal}"
+    def enviar_email_confirmacao_cliente(self, dados_formulario):
+        """
+        Envia email de confirmação para o cliente
+        
+        Args:
+            dados_formulario (dict): Dados do formulário preenchido
+        """
+        try:
+            # Email remetente - tentar carregar do secrets.toml primeiro
+            remetente_email = "seu_email_verificado@gmail.com"  # padrão
+            remetente_nome = "Grupo CPZ - Formulários"
+            
+            try:
+                if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
+                    remetente_email = st.secrets["sendgrid"].get("from_email", remetente_email)
+                    remetente_nome = st.secrets["sendgrid"].get("from_name", remetente_nome)
+            except:
+                pass  # usar padrão se não conseguir carregar
+            
+            from_email = Email(remetente_email, remetente_nome)
+            
+            # Email destinatário (cliente)
+            to_email = To(dados_formulario.get('email', ''))
+            
+            # Assunto personalizado para o cliente
+            subject = f"✅ Confirmação de Adesão - Seguro Incêndio Conteúdos - {dados_formulario.get('nome_completo', 'N/A')}"
+            
+            # Conteúdo HTML do email para o cliente
+            html_content = self._gerar_html_email_cliente(dados_formulario)
+            content = Content("text/html", html_content)
+            
+            # Criar email
+            mail = Mail(from_email, to_email, subject, content)
+            
+            # Enviar
+            response = self.sg.client.mail.send.post(request_body=mail.get())
+            
+            if response.status_code == 202:
+                return True, "Email de confirmação enviado para o cliente!"
+            else:
+                return False, f"Erro ao enviar email para cliente. Status: {response.status_code}"
+                
+        except Exception as e:
+            return False, f"Erro ao enviar email para cliente: {str(e)}"
+    
+    def _gerar_html_email_cliente(self, dados):
+        """Gera HTML formatado para o email de confirmação do cliente"""
+        # Extrair nome do plano corretamente
+        plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background: linear-gradient(135deg, #48bb78, #38a169); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .section {{ margin-bottom: 25px; }}
+                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #48bb78; padding-bottom: 5px; }}
+                .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
+                .label {{ font-weight: bold; color: #4a5568; }}
+                .value {{ color: #2d3748; }}
+                .highlight {{ background: #c6f6d5; padding: 15px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 20px 0; }}
+                .success-box {{ background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }}
+                .footer {{ text-align: center; margin-top: 20px; color: #718096; font-size: 12px; }}
+                .next-steps {{ background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>✅ Confirmação de Adesão</h1>
+                    <h2>Seguro Incêndio Conteúdos - Cessionários ORLA RIO</h2>
+                    <p>Olá, {dados.get('nome_completo', 'N/A')}!</p>
+                </div>
+                
+                <div class="content">
+                    <div class="success-box">
+                        <h3 style="margin: 0 0 10px 0;">🎉 Sua solicitação foi recebida com sucesso!</h3>
+                        <p style="margin: 0;">Recebemos sua adesão ao seguro e nossa equipe entrará em contato em breve.</p>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">📋 Resumo da sua Adesão</div>
+                        <div class="info-row">
+                            <span class="label">Nome:</span>
+                            <span class="value">{dados.get('nome_completo', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">CPF:</span>
+                            <span class="value">{formatar_cpf(dados.get('cpf', ''))}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Email:</span>
+                            <span class="value">{dados.get('email', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Empresa:</span>
+                            <span class="value">{dados.get('razao_social', 'N/A')}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">CNPJ:</span>
+                            <span class="value">{formatar_cnpj(dados.get('cnpj', ''))}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">🛡️ Plano Selecionado</div>
+                        <div class="info-row">
+                            <span class="label">Plano:</span>
+                            <span class="value">{plano_nome}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Data de Inclusão:</span>
+                            <span class="value">{datetime.strptime(dados.get('data_inclusao', ''), '%Y-%m-%d').strftime('%d/%m/%Y') if dados.get('data_inclusao') else 'N/A'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Vigência até:</span>
+                            <span class="value">31/12/2025</span>
+                        </div>
+                    </div>
+                    
+                    <div class="highlight">
+                        <h3 style="margin: 0 0 10px 0; color: #22543d;">💰 Valor do Prêmio</h3>
+                        <div class="info-row">
+                            <span class="label">Dias de Cobertura:</span>
+                            <span class="value">{dados.get('dias_restantes', 'N/A')} dias</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label"><strong>Prêmio Pró-rata:</strong></span>
+                            <span class="value"><strong>{formatar_valor_real(dados.get('premio_pro_rata', 0))}</strong></span>
+                        </div>
+                    </div>
+                    
+                    <div class="next-steps">
+                        <h3 style="margin: 0 0 10px 0; color: #1976d2;">📞 Próximos Passos</h3>
+                        <p style="margin: 0;">
+                            • Nossa equipe entrará em contato em até 24 horas<br>
+                            • Você receberá as instruções para pagamento<br>
+                            • Após confirmação do pagamento, sua apólice será emitida<br>
+                            • Dúvidas? Entre em contato: <strong>informe@cpzseg.com.br</strong>
+                        </p>
+                    </div>
+                    
+                    <div class="footer">
+                        <p><strong>Grupo CPZ Seguros</strong></p>
+                        <p>Este email foi gerado automaticamente em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}</p>
+                        <p>Email: informe@cpzseg.com.br | Telefone: (21) XXXX-XXXX</p>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return html
+
+def configurar_sendgrid_streamlit():
+    """
+    Função para configurar SendGrid no Streamlit
+    """
+    # Configuração na sidebar
+    st.sidebar.header("⚙️ Configuração Email")
+    
+    # Opção para usar modo de teste ou SendGrid
+    email_mode = st.sidebar.selectbox(
+        "Modo de Email:",
+        ["Teste (sem envio)", "SendGrid", "SMTP Tradicional"],
+        help="Escolha como enviar os emails do formulário"
+    )
+    
+    if email_mode == "SendGrid":
+        if not SENDGRID_AVAILABLE:
+            st.sidebar.error("❌ SendGrid não instalado! Execute: pip install sendgrid")
+            return None, False, email_mode
+        
+        # Tentar carregar configurações do secrets.toml primeiro
+        api_key_from_secrets = None
+        email_destino_from_secrets = "seguros@grupocp.com.br"
+        
+        try:
+            if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
+                api_key_from_secrets = st.secrets["sendgrid"].get("api_key", "")
+                email_destino_from_secrets = st.secrets["sendgrid"].get("email_destino", "seguros@grupocp.com.br")
+                
+                if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui":
+                    st.sidebar.success("🔐 Configuração carregada do secrets.toml")
+        except Exception:
+            pass  # Ignora erros de secrets
+        
+        # Input para API Key (com valor padrão do secrets se disponível)
+        api_key = st.sidebar.text_input(
+            "SendGrid API Key:",
+            value=api_key_from_secrets if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui" else "",
+            type="password",
+            help="Cole aqui sua API Key do SendGrid ou configure no secrets.toml",
+            key="sendgrid_api_key"
+        )
+        
+        # Input para email de destino (com valor padrão do secrets se disponível)
+        email_destino = st.sidebar.text_input(
+            "Email de Destino:",
+            value=email_destino_from_secrets,
+            help="Email que receberá as solicitações",
+            key="sendgrid_email_destino"
+        )
+        
+        if api_key:
+            try:
+                sender = SendGridEmailSender(api_key)
+                st.sidebar.success("✅ SendGrid configurado!")
+                
+                # Mostrar informações de configuração
+                if api_key_from_secrets and api_key == api_key_from_secrets:
+                    st.sidebar.info("📋 Usando configuração do secrets.toml")
+                else:
+                    st.sidebar.info("📋 Usando configuração manual")
+                
+                return sender, True, email_mode
+            except Exception as e:
+                st.sidebar.error(f"❌ Erro na configuração: {str(e)}")
+                return None, False, email_mode
+        else:
+            if api_key_from_secrets:
+                st.sidebar.warning("⚠️ Configure a API Key no secrets.toml ou insira manualmente")
+            else:
+                st.sidebar.warning("⚠️ Insira a API Key do SendGrid")
+            return None, False, email_mode
+            
+    elif email_mode == "SMTP Tradicional":
+        st.sidebar.info("📧 Usando configuração SMTP tradicional")
+        return None, True, email_mode
+    else:
+        st.sidebar.info("📧 Modo de teste ativo - emails não serão enviados")
+        return None, True, email_mode
 
 @lru_cache(maxsize=100)
 def buscar_cnpj(cnpj: str) -> Optional[str]:
@@ -713,21 +1128,33 @@ def calcular_pro_rata(plano: str, data_inclusao: datetime) -> Tuple[int, float]:
     
     return dias_restantes, premio_pro_rata
 
-def enviar_email_confirmacao(dados: Dict) -> bool:
+def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)") -> bool:
     """Envia email de confirmação com todas as informações"""
     try:
-        # Verificar se está em modo de teste
-        if EMAIL_CONFIG.get("modo_teste", True):
-            st.info("🧪 **Modo de teste ativado** - Email não será enviado, mas dados foram processados com sucesso!")
+        # Modo de teste
+        if email_mode == "Teste (sem envio)":
+            st.info("🧪 **Modo de teste ativado** - Emails não serão enviados, mas dados foram processados com sucesso!")
             st.success("✅ Formulário processado com sucesso!")
             
-            # Mostrar preview do email que seria enviado
-            with st.expander("📧 Preview do email que seria enviado", expanded=False):
+            # Mostrar preview dos emails que seriam enviados
+            with st.expander("📧 Preview dos emails que seriam enviados", expanded=False):
                 plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
                 
-                st.markdown("**Para:** " + EMAIL_CONFIG.get("email_empresa", "empresa@exemplo.com") + " e " + dados['email'])
-                st.markdown("**Assunto:** 🛡️ Nova Adesão de Seguro - " + dados['nome_completo'])
-                st.markdown("**Conteúdo:**")
+                st.markdown("### 📨 Email 1 - Para a Empresa")
+                st.markdown("**Para:** seguros@grupocp.com.br")
+                st.markdown("**Assunto:** 🛡️ Nova Solicitação - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
+                st.markdown("**Tipo:** Notificação de nova adesão (dados completos)")
+                
+                st.markdown("---")
+                
+                st.markdown("### 📨 Email 2 - Para o Cliente")
+                st.markdown(f"**Para:** {dados['email']}")
+                st.markdown("**Assunto:** ✅ Confirmação de Adesão - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
+                st.markdown("**Tipo:** Confirmação de recebimento da solicitação")
+                
+                st.markdown("---")
+                
+                st.markdown("**📋 Resumo dos dados:**")
                 st.markdown(f"""
                 - **Nome:** {dados['nome_completo']}
                 - **CPF:** {formatar_cpf(dados['cpf'])}
@@ -743,172 +1170,230 @@ def enviar_email_confirmacao(dados: Dict) -> bool:
             
             return True
         
-        # Validação básica para modo produção
-        if not all([EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"], EMAIL_CONFIG["email_remetente"], EMAIL_CONFIG["senha_email"], EMAIL_CONFIG["email_empresa"]]):
-            st.warning("⚠️ Configurações de email incompletas. Configure as variáveis de ambiente:")
-            st.code("""
-            EMAIL_REMETENTE=seu_email@empresa.com
-            EMAIL_SENHA=sua_senha_de_app
-            EMAIL_EMPRESA=email_destino@empresa.com
-            MODO_TESTE=false
-            """)
-            return False
-        
-        # Extrair nome do plano corretamente
-        plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
-        
-        # Lista de destinatários
-        destinatarios = [EMAIL_CONFIG["email_empresa"], dados['email']]
-        
-        # Corpo do email em HTML
-        corpo_html = f"""
-        <html>
-        <head>
-            <style>
-                body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
-                .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
-                .section {{ margin-bottom: 25px; }}
-                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }}
-                .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
-                .label {{ font-weight: bold; color: #4a5568; }}
-                .value {{ color: #2d3748; }}
-                .highlight {{ background: #c6f6d5; padding: 15px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 20px 0; }}
-                .footer {{ text-align: center; margin-top: 20px; color: #718096; font-size: 12px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🛡️ Nova Adesão de Seguro</h1>
-                    <p>Formulário preenchido em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}</p>
-                </div>
-                
-                <div class="content">
-                    <div class="section">
-                        <div class="section-title">👤 Dados Pessoais</div>
-                        <div class="info-row">
-                            <span class="label">Nome Completo:</span>
-                            <span class="value">{dados['nome_completo']}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">CPF:</span>
-                            <span class="value">{formatar_cpf(dados['cpf'])}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">E-mail:</span>
-                            <span class="value">{dados['email']}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Telefone:</span>
-                            <span class="value">{formatar_telefone(dados['telefone'])}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">CNPJ:</span>
-                            <span class="value">{formatar_cnpj(dados['cnpj'])}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Razão Social:</span>
-                            <span class="value">{dados['razao_social']}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">📍 Endereço</div>
-                        <div class="info-row">
-                            <span class="label">CEP:</span>
-                            <span class="value">{formatar_cep(dados['cep'])}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Logradouro:</span>
-                            <span class="value">{dados['logradouro']}, {dados['numero']}</span>
-                        </div>
-                        {f'<div class="info-row"><span class="label">Complemento:</span><span class="value">{dados["complemento"]}</span></div>' if dados.get('complemento') else ''}
-                        <div class="info-row">
-                            <span class="label">Bairro:</span>
-                            <span class="value">{dados['bairro']}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Cidade/Estado:</span>
-                            <span class="value">{dados['cidade']} - {dados['estado']}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="section">
-                        <div class="section-title">🛡️ Plano de Seguro</div>
-                        <div class="info-row">
-                            <span class="label">Plano Selecionado:</span>
-                            <span class="value">{plano_nome}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Data de Inclusão:</span>
-                            <span class="value">{datetime.strptime(dados['data_inclusao'], '%Y-%m-%d').strftime('%d/%m/%Y')}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label">Vigência até:</span>
-                            <span class="value">31/12/2025</span>
-                        </div>
-                    </div>
-                    
-                    <div class="highlight">
-                        <h3 style="margin: 0 0 10px 0; color: #22543d;">💰 Cálculo Pró-rata</h3>
-                        <div class="info-row">
-                            <span class="label">Dias Restantes:</span>
-                            <span class="value">{dados['dias_restantes']} dias</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="label"><strong>Prêmio Pró-rata:</strong></span>
-                            <span class="value"><strong>{formatar_valor_real(dados['premio_pro_rata'])}</strong></span>
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>Este email foi gerado automaticamente pelo sistema de adesão de seguros.</p>
-                        <p>Data/Hora UTC: {dados['timestamp_utc']}</p>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Conectar ao servidor SMTP
-        server = smtplib.SMTP(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
-        server.starttls()
-        server.login(EMAIL_CONFIG["email_remetente"], EMAIL_CONFIG["senha_email"])
-        
-        # Enviar para cada destinatário
-        emails_enviados = 0
-        for destinatario in destinatarios:
+        # Modo SendGrid
+        elif email_mode == "SendGrid" and email_sender:
             try:
-                # Criar mensagem individual
-                msg = MIMEMultipart()
-                msg['From'] = EMAIL_CONFIG["email_remetente"]
-                msg['To'] = destinatario
+                emails_enviados = 0
+                mensagens = []
                 
-                # Assunto personalizado baseado no destinatário
-                if destinatario == dados['email']:
-                    msg['Subject'] = f"✅ Confirmação de Adesão de Seguro - {dados['nome_completo']}"
+                # 1. Enviar para empresa
+                email_destino = st.session_state.get('sendgrid_email_destino', 'seguros@grupocp.com.br')
+                sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino)
+                
+                if sucesso_empresa:
+                    emails_enviados += 1
+                    mensagens.append(f"✅ Email enviado para empresa: {email_destino}")
                 else:
-                    msg['Subject'] = f"🛡️ Nova Adesão de Seguro - {dados['nome_completo']}"
+                    mensagens.append(f"❌ Erro ao enviar para empresa: {msg_empresa}")
                 
-                # Anexar corpo HTML
-                msg.attach(MIMEText(corpo_html, 'html'))
+                # 2. Enviar confirmação para cliente
+                email_cliente = dados.get('email', '').strip()
+                if email_cliente and validar_email(email_cliente):
+                    sucesso_cliente, msg_cliente = email_sender.enviar_email_confirmacao_cliente(dados)
+                    
+                    if sucesso_cliente:
+                        emails_enviados += 1
+                        mensagens.append(f"✅ Email de confirmação enviado para cliente: {email_cliente}")
+                    else:
+                        mensagens.append(f"❌ Erro ao enviar para cliente: {msg_cliente}")
+                else:
+                    mensagens.append("⚠️ Email do cliente inválido - confirmação não enviada")
                 
-                # Enviar email
-                text = msg.as_string()
-                server.sendmail(EMAIL_CONFIG["email_remetente"], destinatario, text)
-                emails_enviados += 1
+                # Exibir resultados
+                for mensagem in mensagens:
+                    if "✅" in mensagem:
+                        st.success(mensagem)
+                    elif "❌" in mensagem:
+                        st.error(mensagem)
+                    else:
+                        st.warning(mensagem)
                 
+                # Retorna True se pelo menos um email foi enviado
+                return emails_enviados > 0
+                    
             except Exception as e:
-                st.warning(f"⚠️ Erro ao enviar email para {destinatario}: {str(e)}")
+                st.error(f"❌ Erro no SendGrid: {str(e)}")
+                return False
         
-        server.quit()
+        # Modo SMTP Tradicional
+        elif email_mode == "SMTP Tradicional":
+            # Verificar se está em modo de teste
+            if EMAIL_CONFIG.get("modo_teste", True):
+                st.info("🧪 **Modo de teste SMTP ativado** - Email não será enviado, mas dados foram processados com sucesso!")
+                st.success("✅ Formulário processado com sucesso!")
+                return True
+            
+            # Validação básica para modo produção
+            if not all([EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"], EMAIL_CONFIG["email_remetente"], EMAIL_CONFIG["senha_email"], EMAIL_CONFIG["email_empresa"]]):
+                st.warning("⚠️ Configurações de email incompletas. Configure as variáveis de ambiente:")
+                st.code("""
+                EMAIL_REMETENTE=seu_email@empresa.com
+                EMAIL_SENHA=sua_senha_de_app
+                EMAIL_EMPRESA=email_destino@empresa.com
+                MODO_TESTE=false
+                """)
+                return False
+            
+            # Extrair nome do plano corretamente
+            plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
+            
+            # Lista de destinatários
+            destinatarios = [EMAIL_CONFIG["email_empresa"], dados['email']]
+            
+            # Corpo do email em HTML
+            corpo_html = f"""
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
+                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                    .header {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                    .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
+                    .section {{ margin-bottom: 25px; }}
+                    .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }}
+                    .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
+                    .label {{ font-weight: bold; color: #4a5568; }}
+                    .value {{ color: #2d3748; }}
+                    .highlight {{ background: #c6f6d5; padding: 15px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 20px 0; }}
+                    .footer {{ text-align: center; margin-top: 20px; color: #718096; font-size: 12px; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>🛡️ Seguro Incêndio Conteúdos - Cessionários ORLA RIO</h1>
+                        <p>Nova Solicitação Recebida</p>
+                        <p>Formulário preenchido em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}</p>
+                    </div>
+                    
+                    <div class="content">
+                        <div class="section">
+                            <div class="section-title">👤 Dados Pessoais</div>
+                            <div class="info-row">
+                                <span class="label">Nome Completo:</span>
+                                <span class="value">{dados['nome_completo']}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">CPF:</span>
+                                <span class="value">{formatar_cpf(dados['cpf'])}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">E-mail:</span>
+                                <span class="value">{dados['email']}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Telefone:</span>
+                                <span class="value">{formatar_telefone(dados['telefone'])}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">CNPJ:</span>
+                                <span class="value">{formatar_cnpj(dados['cnpj'])}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Razão Social:</span>
+                                <span class="value">{dados['razao_social']}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <div class="section-title">📍 Endereço do Quiosque</div>
+                            <div class="info-row">
+                                <span class="label">CEP:</span>
+                                <span class="value">{formatar_cep(dados['cep'])}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Logradouro:</span>
+                                <span class="value">{dados['logradouro']}, {dados['numero']}</span>
+                            </div>
+                            {f'<div class="info-row"><span class="label">Complemento:</span><span class="value">{dados["complemento"]}</span></div>' if dados.get('complemento') else ''}
+                            <div class="info-row">
+                                <span class="label">Bairro:</span>
+                                <span class="value">{dados['bairro']}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Cidade/Estado:</span>
+                                <span class="value">{dados['cidade']} - {dados['estado']}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <div class="section-title">🛡️ Plano de Seguro</div>
+                            <div class="info-row">
+                                <span class="label">Plano Selecionado:</span>
+                                <span class="value">{plano_nome}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Data de Inclusão:</span>
+                                <span class="value">{datetime.strptime(dados['data_inclusao'], '%Y-%m-%d').strftime('%d/%m/%Y')}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Vigência até:</span>
+                                <span class="value">31/12/2025</span>
+                            </div>
+                        </div>
+                        
+                        <div class="highlight">
+                            <h3 style="margin: 0 0 10px 0; color: #22543d;">💰 Cálculo Pró-rata</h3>
+                            <div class="info-row">
+                                <span class="label">Dias Restantes:</span>
+                                <span class="value">{dados['dias_restantes']} dias</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label"><strong>Prêmio Pró-rata:</strong></span>
+                                <span class="value"><strong>{formatar_valor_real(dados['premio_pro_rata'])}</strong></span>
+                            </div>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>Este email foi gerado automaticamente pelo sistema de adesão de seguros - Grupo CPZ</p>
+                            <p>Data/Hora UTC: {dados['timestamp_utc']}</p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+            
+            # Conectar ao servidor SMTP
+            server = smtplib.SMTP(EMAIL_CONFIG["smtp_server"], EMAIL_CONFIG["smtp_port"])
+            server.starttls()
+            server.login(EMAIL_CONFIG["email_remetente"], EMAIL_CONFIG["senha_email"])
+            
+            # Enviar para cada destinatário
+            emails_enviados = 0
+            for destinatario in destinatarios:
+                try:
+                    # Criar mensagem individual
+                    msg = MIMEMultipart()
+                    msg['From'] = EMAIL_CONFIG["email_remetente"]
+                    msg['To'] = destinatario
+                    
+                    # Assunto personalizado baseado no destinatário
+                    if destinatario == dados['email']:
+                        msg['Subject'] = f"✅ Confirmação de Adesão de Seguro - {dados['nome_completo']}"
+                    else:
+                        msg['Subject'] = f"🛡️ Nova Adesão de Seguro - {dados['nome_completo']}"
+                    
+                    # Anexar corpo HTML
+                    msg.attach(MIMEText(corpo_html, 'html'))
+                    
+                    # Enviar email
+                    text = msg.as_string()
+                    server.sendmail(EMAIL_CONFIG["email_remetente"], destinatario, text)
+                    emails_enviados += 1
+                    
+                except Exception as e:
+                    st.warning(f"⚠️ Erro ao enviar email para {destinatario}: {str(e)}")
+            
+            server.quit()
+            
+            # Retorna True se pelo menos um email foi enviado
+            return emails_enviados > 0
         
-        # Retorna True se pelo menos um email foi enviado
-        return emails_enviados > 0
-        
+        else:
+            st.error("❌ Configuração de email inválida")
+            return False
+            
     except smtplib.SMTPAuthenticationError as e:
         st.error(f"❌ Erro de autenticação SMTP: {str(e)}")
         st.error("Verifique as credenciais de email nas configurações.")
@@ -1051,19 +1536,22 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
+    # ==================== CONFIGURAÇÃO DE EMAIL ====================
+    # Configurar SendGrid/Email antes do formulário
+    email_sender, email_ready, email_mode = configurar_sendgrid_streamlit()
+    
     # Inicializa session state para manter dados em caso de erro
     if 'form_data' not in st.session_state:
         st.session_state.form_data = {}
     
-    # Inicializa plano padrão se não existir
-    if 'plano_radio' not in st.session_state:
-        # Criar opções formatadas para definir padrão
-        plano_opcoes_temp = []
-        for plano, preco in PLANOS_SEGURO.items():
-            plano_opcoes_temp.append(f"{plano}\n{formatar_valor_real(preco)}/ano")
-        
-        if plano_opcoes_temp:
-            st.session_state['plano_radio'] = plano_opcoes_temp[0]
+    # Criar opções formatadas para os planos (sempre)
+    plano_opcoes_disponiveis = []
+    for plano, preco in PLANOS_SEGURO.items():
+        plano_opcoes_disponiveis.append(f"{plano}\n{formatar_valor_real(preco)}/ano")
+    
+    # Inicializa plano padrão apenas se não existir e não há widget ativo
+    if 'plano_radio' not in st.session_state and plano_opcoes_disponiveis:
+        st.session_state['plano_radio'] = plano_opcoes_disponiveis[0]
     
     # Formulário principal
     with st.form("formulario_seguro"):
@@ -1343,7 +1831,7 @@ def main():
                         <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
                         <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
                     </tr>
-                    <tr style="background: white;">
+                    <tr style="background: #f8f9fa;">
                         <td style="
                             padding: 8px; 
                             font-weight: 500; 
@@ -1373,88 +1861,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
         
-        # Seleção do plano DENTRO do formulário
-        st.markdown('<div class="section-title">🛡️ Seleção do Plano</div>', unsafe_allow_html=True)
-        
-        # Criar opções formatadas para os radio buttons
-        plano_opcoes = []
-        for plano, preco in PLANOS_SEGURO.items():
-            plano_opcoes.append(f"{plano}\n{formatar_valor_real(preco)}/ano")
-        
-        # Determinar índice padrão baseado no session state
-        default_index = 0
-        if st.session_state.form_data.get('plano'):
-            try:
-                default_index = list(PLANOS_SEGURO.keys()).index(st.session_state.form_data.get('plano'))
-            except ValueError:
-                default_index = 0
-        
-        plano_selecionado = st.radio(
-            "Plano",
-            options=plano_opcoes,
-            index=default_index,
-            key="plano_radio",
-            label_visibility="collapsed",
-            horizontal=True
-        )
-        
-        # Cálculo dinâmico DENTRO do formulário
-        if plano_selecionado:
-            plano_nome = plano_selecionado.split('\n')[0]
-            preco_anual = PLANOS_SEGURO[plano_nome]
-            
-            # Data de inclusão (hoje)
-            tz_sao_paulo = timezone(timedelta(hours=-3))
-            data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
-            
-            # Calcula pró-rata
-            dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
-            
-            # Exibe o cálculo detalhado
-            st.markdown("---")
-            
-            # Container centralizado para o cálculo
-            col_esq, col_calc, col_dir = st.columns([0.5, 2, 0.5])
-            
-            with col_calc:
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**📅 Período de Vigência:**")
-                    st.markdown(f"• **Data de Inclusão:** {data_inclusao.strftime('%d/%m/%Y')}")
-                    st.markdown(f"• **Final da Vigência:** {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}")
-                    st.markdown(f"• **Dias Restantes:** {dias_restantes} dias")
-                    
-                with col2:
-                    st.markdown("**💰 Memória de Cálculo:**")
-                    st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
-                    st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
-                    st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
-            
-            # Valor final destacado
-            st.markdown("---")
-            st.markdown(f"""
-            <div style="
-                background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
-                border: 2px solid #48bb78;
-                border-radius: 12px;
-                padding: 1.5rem;
-                text-align: center;
-                margin: 1rem 0;
-                box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
-            ">
-                <h3 style="color: #22543d; margin: 0 0 0.5rem 0; font-size: 1.25rem;">
-                    🎯 Valor Final do Prêmio
-                </h3>
-                <div style="color: #22543d; font-size: 2rem; font-weight: bold; margin: 0;">
-                    {formatar_valor_real(premio_pro_rata)}
-                </div>
-                <div style="color: #2f855a; font-size: 0.875rem; margin-top: 0.5rem;">
-                    Válido de {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Processamento dos botões de busca
@@ -1475,12 +1881,99 @@ def main():
                     st.rerun()
             else:
                 st.error("❌ CEP deve estar no formato 00000-000 para busca automática")
-        
-        # Botão de envio DENTRO do formulário - ÚLTIMA COISA
-        st.markdown("---")
-        enviar_formulario = st.form_submit_button("🚀 Calcular e Enviar", use_container_width=True, type="primary")
 
-    # Processamento do formulário quando enviado (FORA do formulário)
+    # ==================== SELEÇÃO DE PLANO E CÁLCULO DINÂMICO (FORA DO FORMULÁRIO) ====================
+    
+    # Seção de seleção do plano FORA do formulário para atualização em tempo real
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🛡️ Seleção do Plano</div>', unsafe_allow_html=True)
+    
+    # Usar as opções que já criamos anteriormente
+    plano_opcoes = plano_opcoes_disponiveis
+    
+    # Determinar índice padrão baseado no session state
+    default_index = 0
+    if st.session_state.form_data.get('plano'):
+        try:
+            default_index = list(PLANOS_SEGURO.keys()).index(st.session_state.form_data.get('plano'))
+        except ValueError:
+            default_index = 0
+    
+    plano_selecionado = st.radio(
+        "Plano",
+        options=plano_opcoes,
+        index=default_index,
+        key="plano_radio",
+        label_visibility="collapsed",
+        horizontal=True
+    )
+    
+    # Cálculo dinâmico FORA do formulário - atualiza em tempo real
+    if plano_selecionado:
+        plano_nome = plano_selecionado.split('\n')[0]
+        preco_anual = PLANOS_SEGURO[plano_nome]
+        
+        # Data de inclusão (hoje)
+        tz_sao_paulo = timezone(timedelta(hours=-3))
+        data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
+        
+        # Calcula pró-rata
+        dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
+        
+        # Exibe o cálculo detalhado
+        st.markdown("---")
+        
+        # Container centralizado para o cálculo
+        col_esq, col_calc, col_dir = st.columns([0.5, 2, 0.5])
+        
+        with col_calc:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**📅 Período de Vigência:**")
+                st.markdown(f"• **Data de Inclusão:** {data_inclusao.strftime('%d/%m/%Y')}")
+                st.markdown(f"• **Final da Vigência:** {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}")
+                st.markdown(f"• **Dias Restantes:** {dias_restantes} dias")
+                
+            with col2:
+                st.markdown("**💰 Memória de Cálculo:**")
+                st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
+                st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
+                st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
+        
+        # Valor final destacado
+        st.markdown("---")
+        st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+            border: 2px solid #48bb78;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin: 1rem 0;
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
+        ">
+            <h3 style="color: #22543d; margin: 0 0 0.5rem 0; font-size: 1.25rem;">
+                🎯 Valor Final do Prêmio
+            </h3>
+            <div style="color: #22543d; font-size: 2rem; font-weight: bold; margin: 0;">
+                {formatar_valor_real(premio_pro_rata)}
+            </div>
+            <div style="color: #2f855a; font-size: 0.875rem; margin-top: 0.5rem;">
+                Válido de {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # ==================== BOTÃO DE ENVIO FINAL ====================
+    
+    # Botão de envio FORA do formulário - ÚLTIMA COISA
+    st.markdown("---")
+    enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
+
+    # Processamento do formulário quando enviado
     if enviar_formulario:
         # Pega os valores dos campos do formulário via session_state
         dados = preparar_dados_formulario(st.session_state)
@@ -1531,14 +2024,20 @@ def main():
         
         # Tenta enviar email
         try:
-            email_sucesso = enviar_email_confirmacao(dados)
+            email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
             
             if email_sucesso:
                 # Sucesso (pelo menos um funcionou)
                 st.markdown('<div class="success-message">', unsafe_allow_html=True)
                 mensagem_sucesso = f"✅ **Formulário enviado com sucesso!**<br>"
                 mensagem_sucesso += f"💰 **Prêmio pró-rata:** {formatar_valor_real(premio_pro_rata)} para {dias_restantes} dias<br>"
-                mensagem_sucesso += "📧 **Emails de confirmação enviados!**"
+                
+                if email_mode == "Teste (sem envio)":
+                    mensagem_sucesso += "🧪 **Modo de teste ativo - dados processados localmente!**"
+                elif email_mode == "SendGrid":
+                    mensagem_sucesso += "📧 **Email enviado via SendGrid!**"
+                else:
+                    mensagem_sucesso += "📧 **Emails de confirmação enviados!**"
                 
                 st.markdown(mensagem_sucesso, unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -1551,13 +2050,8 @@ def main():
                     if key in st.session_state:
                         del st.session_state[key]
                 
-                # Reseta para o primeiro plano (padrão)
-                plano_opcoes = []
-                for plano, preco in PLANOS_SEGURO.items():
-                    plano_opcoes.append(f"{plano}\n{formatar_valor_real(preco)}/ano")
-                
-                if plano_opcoes:
-                    st.session_state['plano_radio'] = plano_opcoes[0]
+                # Nota: plano_radio não pode ser modificado após widget ser criado
+                # O usuário pode selecionar manualmente o plano desejado para próximo formulário
                 
                 # Botão para novo formulário
                 if st.button("📝 Preencher Novo Formulário", key="new_form_button", use_container_width=True):
