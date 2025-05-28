@@ -48,191 +48,49 @@ def load_css():
 # Carregar CSS
 load_css()
 
-# Adicionar JavaScript para detectar autocomplete
+# JavaScript simplificado para melhor responsividade
 st.markdown("""
 <script>
-// Função avançada para detectar e sincronizar autocomplete
-function syncAutocompleteFields() {
-    // Aguardar o DOM estar pronto
-    setTimeout(function() {
-        const inputs = document.querySelectorAll('input[type="text"]');
-        
-        inputs.forEach(function(input, index) {
-            // Identificar o campo pelo label ou posição
-            const label = input.closest('div').querySelector('label');
-            const labelText = label ? label.textContent.trim() : '';
-            
-            // Armazenar valores em session storage para sincronização
-            const fieldKey = 'streamlit_field_' + index + '_' + labelText.replace(/[^a-zA-Z0-9]/g, '');
-            
-            // Função para sincronizar valor
-            function syncValue() {
-                if (input.value && input.value.trim() !== '') {
-                    sessionStorage.setItem(fieldKey, input.value);
-                    
-                    // Forçar múltiplos eventos
-                    ['input', 'change', 'blur', 'keyup'].forEach(function(eventType) {
-                        const event = new Event(eventType, { bubbles: true, cancelable: true });
-                        Object.defineProperty(event, 'target', { value: input });
-                        input.dispatchEvent(event);
-                    });
-                    
-                    // Simular digitação caracter por caracter (mais agressivo)
-                    const value = input.value;
-                    input.value = '';
-                    for (let i = 0; i < value.length; i++) {
-                        setTimeout(function() {
-                            input.value = value.substring(0, i + 1);
-                            const inputEvent = new Event('input', { bubbles: true });
-                            input.dispatchEvent(inputEvent);
-                        }, i * 10);
-                    }
-                }
-            }
-            
-            // Detectar todas as possíveis formas de preenchimento
-            ['input', 'change', 'blur', 'focus', 'keyup', 'paste', 'autocomplete'].forEach(function(eventType) {
-                input.addEventListener(eventType, syncValue);
-            });
-            
-            // Observador de mutações mais robusto
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'attributes' && 
-                        (mutation.attributeName === 'value' || mutation.attributeName === 'data-value')) {
-                        syncValue();
-                    }
-                });
-            });
-            
-            observer.observe(input, {
-                attributes: true,
-                attributeFilter: ['value', 'data-value', 'aria-valuenow']
-            });
-            
-            // Verificação periódica (polling)
-            setInterval(function() {
-                const currentValue = input.value;
-                const storedValue = sessionStorage.getItem(fieldKey);
-                
-                if (currentValue && currentValue !== storedValue) {
-                    syncValue();
-                }
-            }, 500);
-        });
-    }, 500);
-}
-
-// Executar em múltiplos momentos
-document.addEventListener('DOMContentLoaded', syncAutocompleteFields);
-setTimeout(syncAutocompleteFields, 1000);
-setTimeout(syncAutocompleteFields, 3000);
-setTimeout(syncAutocompleteFields, 5000);
-
-// Função global para forçar sincronização manual
-window.forceFieldSync = function() {
-    const inputs = document.querySelectorAll('input[type="text"]');
-    let syncedCount = 0;
+// Script minimalista para melhorar a experiência mobile
+document.addEventListener('DOMContentLoaded', function() {
+    // Detectar mobile
+    const isMobile = window.innerWidth <= 768;
     
-    inputs.forEach(function(input) {
-        if (input.value && input.value.trim() !== '') {
-            syncedCount++;
-            
-            // Método mais agressivo: simular digitação completa
-            const originalValue = input.value;
-            input.value = '';
-            input.focus();
-            
-            // Simular digitação caracter por caracter
-            for (let i = 0; i <= originalValue.length; i++) {
-                setTimeout(function() {
-                    input.value = originalValue.substring(0, i);
-                    
-                    // Disparar eventos a cada caracter
-                    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-                    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                    
-                    input.dispatchEvent(inputEvent);
-                    
-                    if (i === originalValue.length) {
-                        input.dispatchEvent(changeEvent);
-                        input.blur();
-                    }
-                }, i * 50);
-            }
+    if (isMobile) {
+        // Ajustar inputs para mobile
+        const inputs = document.querySelectorAll('input[type="text"]');
+        inputs.forEach(input => {
+            input.style.fontSize = '16px'; // Previne zoom no iOS
+            input.addEventListener('focus', function() {
+                this.style.outline = '2px solid #182c4b';
+            });
+        });
+        
+        // Melhorar botões em mobile
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(button => {
+            button.style.minHeight = '44px'; // Tamanho mínimo para touch
+        });
+    }
+    
+    // Scroll suave para elementos com erro
+    const errorElements = document.querySelectorAll('.error-message');
+    if (errorElements.length > 0) {
+        errorElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+// Função simples para melhorar UX
+window.enhanceFormUX = function() {
+    const inputs = document.querySelectorAll('input[type="text"]');
+    inputs.forEach(input => {
+        if (input.value) {
+            input.style.borderColor = '#16a34a';
+            input.style.borderWidth = '2px';
         }
     });
-    
-    // Feedback visual melhorado
-    const notification = document.createElement('div');
-    notification.innerHTML = `✅ ${syncedCount} campos sincronizados!`;
-    notification.style.cssText = `
-        position: fixed; 
-        top: 20px; 
-        right: 20px; 
-        background: linear-gradient(135deg, #28a745, #20c997); 
-        color: white; 
-        padding: 15px 25px; 
-        border-radius: 10px; 
-        z-index: 9999; 
-        font-weight: bold;
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        animation: slideIn 0.3s ease;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(function() {
-        if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-        }
-    }, 3000);
-    
-    return syncedCount;
 };
-
-// CSS para animação
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-`;
-document.head.appendChild(style);
 </script>
-
-<style>
-/* Indicação visual mais forte para campos preenchidos via autocomplete */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #e8f5e8 inset !important;
-    -webkit-text-fill-color: #1a202c !important;
-    background: #e8f5e8 !important;
-    border: 2px solid #28a745 !important;
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1) !important;
-    transition: all 0.3s ease !important;
-}
-
-/* Indicação para campos válidos */
-input:valid:not(:placeholder-shown) {
-    border-color: #28a745 !important;
-    background: #f8fff8 !important;
-}
-
-/* Animação para campos sincronizados */
-.field-synced {
-    animation: fieldSync 0.5s ease;
-}
-
-@keyframes fieldSync {
-    0% { background: #fff3cd; }
-    50% { background: #d1ecf1; }
-    100% { background: #d4edda; }
-}
-</style>
 """, unsafe_allow_html=True)
 
 def carregar_logo(width=None):
@@ -1236,55 +1094,292 @@ def get_field_value(field_name: str) -> str:
     
     return ''
 
+def render_header():
+    """Renderiza o header responsivo da aplicação"""
+    st.markdown("""
+    <div class="header-container">
+        <div class="header-content">
+    """, unsafe_allow_html=True)
+    
+    # Logo responsivo
+    try:
+        carregar_logo(width=100)  # Menor para melhor responsividade
+    except Exception:
+        st.markdown("**🛡️ Formulário de Adesão**")
+    
+    # Títulos responsivos
+    st.markdown("""
+        <div class="header-titles">
+            <h1 class="header-main-title">Formulário de Adesão</h1>
+            <h2 class="header-subtitle">Seguro Incêndio Conteúdos - Cessionários</h2>
+            <p class="header-company"><strong>ORLA RIO</strong></p>
+        </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_coberturas_table():
+    """Renderiza tabela de coberturas de forma responsiva"""
+    st.markdown("### 📋 Detalhamento das Coberturas")
+    
+    # Alternar entre tabela e cards baseado no dispositivo
+    st.markdown("""
+    <div class="coverage-info">
+        <p>💡 <strong>Navegação:</strong> No desktop, veja a tabela completa. No mobile, navegue pelos cards abaixo.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Versão desktop (tabela)
+    st.markdown("""
+    <div class="coverage-table-desktop">
+        <div style="overflow-x: auto; margin: 1.5rem 0;">
+            <table class="coverage-table">
+                <thead>
+                    <tr>
+                        <th>Coberturas</th>
+                        <th>Opção 1<br><span class="price-label">R$ 250.000</span></th>
+                        <th>Opção 2<br><span class="price-label">R$ 400.000</span></th>
+                        <th>Opção 3<br><span class="price-label">R$ 700.000</span></th>
+                        <th>Franquia</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="coverage-name">Incêndio, Raio e Explosão</td>
+                        <td>R$ 250.000</td>
+                        <td>R$ 400.000</td>
+                        <td>R$ 700.000</td>
+                        <td class="franchise">R$ 30.000 (**)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Alagamento</td>
+                        <td>R$ 50.000</td>
+                        <td>R$ 100.000</td>
+                        <td>R$ 150.000</td>
+                        <td class="franchise">R$ 15.000 (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Danos Elétricos</td>
+                        <td>R$ 20.000</td>
+                        <td>R$ 50.000</td>
+                        <td>R$ 100.000</td>
+                        <td class="franchise">R$ 3.000 (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Pequenas Obras</td>
+                        <td>R$ 50.000</td>
+                        <td>R$ 100.000</td>
+                        <td>R$ 150.000</td>
+                        <td class="franchise">R$ 5.000 (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Perda/Pgto Aluguel (6m)</td>
+                        <td>R$ 20.000</td>
+                        <td>R$ 30.000</td>
+                        <td>R$ 40.000</td>
+                        <td class="no-franchise">Não Há</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Vidros</td>
+                        <td>R$ 20.000</td>
+                        <td>R$ 50.000</td>
+                        <td>R$ 100.000</td>
+                        <td class="franchise">R$ 3.000 (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Tumultos</td>
+                        <td>R$ 100.000</td>
+                        <td>R$ 150.000</td>
+                        <td>R$ 200.000</td>
+                        <td class="franchise">R$ 5.000 (*)</td>
+                    </tr>
+                    <tr>
+                        <td class="coverage-name">Vendaval</td>
+                        <td>R$ 100.000</td>
+                        <td>R$ 150.000</td>
+                        <td>R$ 200.000</td>
+                        <td class="franchise">R$ 10.000 (*)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Versão mobile (cards)
+    st.markdown("""
+    <div class="coverage-cards-mobile">
+        <div class="coverage-card">
+            <h4>🔥 Incêndio, Raio e Explosão</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 250.000</span>
+                <span>Opção 2: R$ 400.000</span>
+                <span>Opção 3: R$ 700.000</span>
+                <span class="franchise">Franquia: R$ 30.000 (*)</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>💧 Alagamento</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 50.000</span>
+                <span>Opção 2: R$ 100.000</span>
+                <span>Opção 3: R$ 150.000</span>
+                <span class="franchise">Franquia: R$ 15.000 (*)</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>⚡ Danos Elétricos</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 20.000</span>
+                <span>Opção 2: R$ 50.000</span>
+                <span>Opção 3: R$ 100.000</span>
+                <span class="franchise">Franquia: R$ 3.000 (*)</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>🔨 Pequenas Obras</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 50.000</span>
+                <span>Opção 2: R$ 100.000</span>
+                <span>Opção 3: R$ 150.000</span>
+                <span class="franchise">Franquia: R$ 5.000</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>🏠 Perda/Pgto Aluguel (6m)</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 20.000</span>
+                <span>Opção 2: R$ 30.000</span>
+                <span>Opção 3: R$ 40.000</span>
+                <span class="no-franchise">Franquia: Não Há</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>🪟 Vidros</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 20.000</span>
+                <span>Opção 2: R$ 50.000</span>
+                <span>Opção 3: R$ 100.000</span>
+                <span class="franchise">Franquia: R$ 3.000</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>⚠️ Tumultos</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 100.000</span>
+                <span>Opção 2: R$ 150.000</span>
+                <span>Opção 3: R$ 200.000</span>
+                <span class="franchise">Franquia: R$ 5.000</span>
+            </div>
+        </div>
+        
+        <div class="coverage-card">
+            <h4>💨 Vendaval</h4>
+            <div class="coverage-values">
+                <span>Opção 1: R$ 100.000</span>
+                <span>Opção 2: R$ 150.000</span>
+                <span>Opção 3: R$ 200.000</span>
+                <span class="franchise">Franquia: R$ 10.000</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Legenda
+    st.markdown("""
+    <div class="coverage-legend">
+        <p><strong>📝 Sobre as Franquias:</strong></p>
+        <p>Franquia é o valor que fica por sua conta em caso de sinistro.</p>
+        <p>Valores aplicáveis por sinistro individual.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_responsive_field(label, field_name, field_type="text", help_text="", placeholder="", search_button=False, col_ratio=None):
+    """Renderiza campos de forma responsiva baseado no tamanho da tela"""
+    
+    if search_button:
+        # Para campos com botão de busca
+        if col_ratio is None:
+            col_ratio = [3, 1]  # Desktop padrão
+        
+        # Container responsivo
+        st.markdown('<div class="responsive-field-container">', unsafe_allow_html=True)
+        
+        # Usar CSS flexbox em vez de colunas do Streamlit para melhor controle
+        st.markdown(f"""
+        <div class="field-with-search">
+            <div class="field-input">
+        """, unsafe_allow_html=True)
+        
+        # Campo principal
+        value = st.text_input(
+            label,
+            value=get_field_value(field_name),
+            help=help_text,
+            placeholder=placeholder,
+            key=field_name
+        )
+        
+        st.markdown('</div><div class="field-button">', unsafe_allow_html=True)
+        
+        # Botão de busca
+        button_key = f"buscar_{field_name}"
+        button_pressed = st.button(f"🔍 Buscar", key=button_key, use_container_width=True)
+        
+        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        return value, button_pressed
+    else:
+        # Campo simples
+        return st.text_input(
+            label,
+            value=get_field_value(field_name),
+            help=help_text,
+            placeholder=placeholder,
+            key=field_name
+        )
+
+def render_responsive_columns(fields_data, columns=2):
+    """Renderiza campos em colunas responsivas que se empilham em mobile"""
+    st.markdown('<div class="responsive-columns">', unsafe_allow_html=True)
+    
+    for i in range(0, len(fields_data), columns):
+        chunk = fields_data[i:i+columns]
+        
+        # Criar div flexível em vez de usar st.columns
+        st.markdown('<div class="responsive-row">', unsafe_allow_html=True)
+        
+        for field in chunk:
+            st.markdown('<div class="responsive-col">', unsafe_allow_html=True)
+            
+            field['value'] = st.text_input(
+                field['label'],
+                value=get_field_value(field['key']),
+                help=field.get('help', ''),
+                placeholder=field.get('placeholder', ''),
+                key=field['key']
+            )
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    return {field['key']: field.get('value', '') for field in fields_data}
+
 def main():
     """Função principal do aplicativo"""
     
-    # Barra superior compacta com logo e títulos
-    st.markdown("""
-    <div class="header-bar" style="
-        background: #182c4b;
-        padding: 1rem;
-        margin: -1rem -1rem 0.5rem -1rem;
-        border-radius: 0 0 16px 16px;
-        box-shadow: 0 4px 12px rgba(24, 44, 75, 0.2);
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: calc(100% + 2rem);
-        margin-left: -1rem;
-        margin-right: -1rem;
-    ">
-    """, unsafe_allow_html=True)
-    
-    # Inserir logo real usando a função existente
-    try:
-        # Logo responsivo - menor em mobile
-        logo_width = 120  # Reduzido de 150 para 120
-        carregar_logo(width=logo_width)
-        
-        # Textos centralizados - responsivos
-        st.markdown("""
-        <div style="text-align: center; color: white; margin-top: -0.5rem; width: 100%;">
-            <h1 style="margin: 0; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 700; line-height: 1.2;">Formulário de Adesão</h1>
-            <p style="margin: 0; font-size: clamp(0.875rem, 3.5vw, 1rem); opacity: 0.9; line-height: 1.3;">Seguro Incêndio Conteúdos - Cessionários <span style="color: white; font-weight: 600;">ORLA RIO</span></p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    except Exception as e:
-        # Fallback se houver erro
-        st.markdown("""
-        <div style="text-align: center; color: white;">
-            <h1 style="margin: 0 0 0.25rem 0; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 700; line-height: 1.2;">Formulário de Adesão</h1>
-            <p style="margin: 0; font-size: clamp(0.875rem, 3.5vw, 1rem); opacity: 0.9; line-height: 1.3;">Seguro Incêndio Conteúdos - Cessionários <span style="color: white; font-weight: 600;">ORLA RIO</span></p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Fechar a div da barra
-    st.markdown("""
-    </div>
-    """, unsafe_allow_html=True)
+    # Header limpo e responsivo
+    render_header()
     
     # ==================== CONFIGURAÇÃO DE EMAIL ====================
     # Configurar SendGrid/Email antes do formulário
@@ -1443,194 +1538,7 @@ def main():
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
     
-    # Tabela de coberturas detalhadas
-    st.markdown("### 📋 Detalhamento das Coberturas")
-    
-    # Nota sobre responsividade em mobile
-    st.markdown("""
-    <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0; font-size: 0.875rem;">
-        📱 <strong>Dica Mobile:</strong> Deslize horizontalmente na tabela abaixo para ver todas as colunas
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="overflow-x: auto; margin: 1.5rem 0; -webkit-overflow-scrolling: touch;">
-        <table style="
-            width: 100%; 
-            min-width: 500px;
-            border-collapse: collapse; 
-            background: white; 
-            border-radius: 8px; 
-            overflow: hidden; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            table-layout: auto;
-        ">
-            <thead>
-                <tr style="background: #182c4b; color: white;">
-                    <th style="
-                        padding: 12px 8px; 
-                        text-align: left; 
-                        font-weight: 600; 
-                        width: 30%;
-                        font-size: 0.9rem;
-                        line-height: 1.3;
-                    ">Coberturas</th>
-                    <th style="
-                        padding: 12px 8px; 
-                        text-align: center; 
-                        font-weight: 600; 
-                        width: 17.5%;
-                        font-size: 0.85rem;
-                        line-height: 1.2;
-                    ">Opção 1<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 250.000</span></th>
-                    <th style="
-                        padding: 12px 8px; 
-                        text-align: center; 
-                        font-weight: 600; 
-                        width: 17.5%;
-                        font-size: 0.85rem;
-                        line-height: 1.2;
-                    ">Opção 2<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 400.000</span></th>
-                    <th style="
-                        padding: 12px 8px; 
-                        text-align: center; 
-                        font-weight: 600; 
-                        width: 17.5%;
-                        font-size: 0.85rem;
-                        line-height: 1.2;
-                    ">Opção 3<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 700.000</span></th>
-                    <th style="
-                        padding: 12px 8px; 
-                        text-align: center; 
-                        font-weight: 600; 
-                        width: 17.5%;
-                        font-size: 0.85rem;
-                        line-height: 1.2;
-                    ">Franquia</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr style="background: #f8f9fa;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Incêndio, Raio e Explosão</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 250.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 400.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 700.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 30.000</td>
-                </tr>
-                <tr style="background: white;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Alagamento</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 15.000</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Danos Elétricos</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 3.000</td>
-                </tr>
-                <tr style="background: white;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Pequenas Obras</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 5.000</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Perda/Pgto Aluguel (6m)</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 30.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 40.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #16a34a; font-size: 0.75rem; font-weight: 500;">Não Há</td>
-                </tr>
-                <tr style="background: white;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Vidros</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 3.000</td>
-                </tr>
-                <tr style="background: #f8f9fa;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Tumultos</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 200.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 5.000</td>
-                </tr>
-                <tr style="background: white;">
-                    <td style="
-                        padding: 10px 8px; 
-                        font-weight: 500; 
-                        color: #2563eb;
-                        font-size: 0.85rem;
-                        line-height: 1.3;
-                    ">Vendaval</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
-                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 200.000</td>
-                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 10.000</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Legenda das franquias
-    st.markdown("""
-    <div style="background: #f0f8ff; border-left: 4px solid #2563eb; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0;">
-        <p style="margin: 0; font-size: 0.875rem; color: #1e40af;">
-            <strong>📝 Legenda das Franquias:</strong><br>
-            (*) Franquia aplicável por sinistro<br>
-            (**) Franquia aplicável por sinistro para Incêndio, Raio e Explosão<br>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    render_coberturas_table()
     
     # Processamento dos botões de busca (fora do form)
     if buscar_cnpj_btn and cnpj:
@@ -1740,123 +1648,46 @@ def main():
     
     # ==================== BOTÃO DE ENVIO FINAL ====================
     
-    # Botão discreto para atualizar campos (caso o JavaScript falhe)
-    with st.expander("🔄 Resolução de Problemas", expanded=False):
+    # Seção de ajuda simplificada
+    with st.expander("❓ Precisa de Ajuda?", expanded=False):
         st.markdown("""
-        **💡 Campos não reconhecidos após autocomplete?**
+        **💡 Dicas para preenchimento:**
         
-        Se você usou o autocomplete do navegador e os campos não foram reconhecidos:
+        • **Autocomplete:** Se o navegador preencheu automaticamente alguns campos, 
+          verifique se todos os dados estão corretos antes de enviar.
+        
+        • **Campos obrigatórios:** Todos os campos marcados com * são obrigatórios.
+        
+        • **Busca automática:** Use os botões 🔍 para preencher dados automaticamente.
+        
+        • **Mobile:** Em dispositivos móveis, role para ver todos os campos.
         """)
         
-        col1, col2 = st.columns([1, 2])
+        col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔄 Sincronizar Campos", help="Força a sincronização de todos os campos preenchidos via autocomplete"):
-                st.markdown("""
-                <script>
-                // Executar sincronização forçada
-                setTimeout(function() {
-                    if (typeof window.forceFieldSync === 'function') {
-                        const count = window.forceFieldSync();
-                        console.log('Campos sincronizados:', count);
-                        
-                        // Aguardar um pouco e recarregar a página para garantir sincronização
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 2000);
-                    } else {
-                        console.error('Função de sincronização não encontrada');
-                        // Fallback: recarregar página
-                        window.location.reload();
-                    }
-                }, 100);
-                </script>
-                """, unsafe_allow_html=True)
+            if st.button("🔄 Limpar Formulário", help="Remove todos os dados preenchidos"):
+                # Limpar session state
+                keys_to_clear = ['form_data', 'cpf', 'nome_completo', 'email', 'telefone', 
+                               'cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 'complemento', 
+                               'bairro', 'cidade', 'estado']
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.rerun()
         
         with col2:
             st.markdown("""
-            Clique em **"Sincronizar Campos"** e aguarde. A página será recarregada automaticamente.
-            """)
-        
-        st.info("💡 **Dica:** Após a sincronização, seus dados preenchidos via autocomplete serão reconhecidos pelo sistema.")
-    
+            <div style="padding: 0.5rem; background: #f0f8ff; border-radius: 8px; text-align: center;">
+                <small>🆘 <strong>Problemas?</strong><br>Entre em contato conosco</small>
+            </div>
+            """, unsafe_allow_html=True)
+
     # Botão de envio FORA do formulário - ÚLTIMA COISA
     st.markdown("---")
     enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
 
     # Processamento do formulário quando enviado
     if enviar_formulario:
-        # NOVA: Tentar capturar valores do DOM antes da validação
-        st.markdown("""
-        <script>
-        // Função para capturar todos os valores do DOM e forçar sincronização
-        function captureAllFieldValues() {
-            const inputs = document.querySelectorAll('input[type="text"]');
-            const fieldValues = {};
-            
-            inputs.forEach(function(input, index) {
-                const label = input.closest('div').querySelector('label');
-                const labelText = label ? label.textContent.trim().toLowerCase() : '';
-                
-                if (input.value && input.value.trim() !== '') {
-                    // Mapear labels para nomes de campos
-                    let fieldName = '';
-                    if (labelText.includes('nome completo')) fieldName = 'nome_completo';
-                    else if (labelText.includes('cpf')) fieldName = 'cpf';
-                    else if (labelText.includes('e-mail')) fieldName = 'email';
-                    else if (labelText.includes('telefone')) fieldName = 'telefone';
-                    else if (labelText.includes('cnpj')) fieldName = 'cnpj';
-                    else if (labelText.includes('razão social')) fieldName = 'razao_social';
-                    else if (labelText.includes('cep')) fieldName = 'cep';
-                    else if (labelText.includes('logradouro')) fieldName = 'logradouro';
-                    else if (labelText.includes('número')) fieldName = 'numero';
-                    else if (labelText.includes('complemento')) fieldName = 'complemento';
-                    else if (labelText.includes('bairro')) fieldName = 'bairro';
-                    else if (labelText.includes('cidade')) fieldName = 'cidade';
-                    else if (labelText.includes('estado')) fieldName = 'estado';
-                    
-                    if (fieldName) {
-                        fieldValues[fieldName] = input.value;
-                        
-                        // Simular digitação mais agressiva
-                        const originalValue = input.value;
-                        input.value = '';
-                        
-                        // Digitar caracter por caracter rapidamente
-                        for (let i = 0; i <= originalValue.length; i++) {
-                            setTimeout(function() {
-                                input.value = originalValue.substring(0, i);
-                                
-                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
-                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
-                                const keyupEvent = new Event('keyup', { bubbles: true, cancelable: true });
-                                
-                                input.dispatchEvent(inputEvent);
-                                input.dispatchEvent(changeEvent);
-                                input.dispatchEvent(keyupEvent);
-                                
-                                if (i === originalValue.length) {
-                                    input.blur();
-                                    input.focus();
-                                    input.blur();
-                                }
-                            }, i * 5); // Muito rápido - 5ms por caracter
-                        }
-                    }
-                }
-            });
-            
-            console.log('Valores capturados:', fieldValues);
-            return fieldValues;
-        }
-        
-        // Executar captura imediatamente
-        captureAllFieldValues();
-        </script>
-        """, unsafe_allow_html=True)
-        
-        # Aguardar um pouco para o JavaScript executar
-        time.sleep(0.5)
-        
         # Pega os valores dos campos do formulário via session_state
         dados = preparar_dados_formulario(st.session_state)
         
