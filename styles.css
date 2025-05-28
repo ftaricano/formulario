@@ -8,6 +8,7 @@
 .stApp {
     background: #b9bdbf;
     min-height: 100vh;
+    overflow-x: hidden; /* Previne scroll horizontal */
 }
 
 /* Container principal */
@@ -16,6 +17,7 @@
     max-width: 520px;
     margin: 0 auto;
     padding: 1rem 0.5rem;
+    overflow-x: hidden; /* Previne overflow horizontal */
 }
 
 /* Card principal do formulário */
@@ -25,6 +27,7 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     padding: 1.5rem;
     border: 1px solid #e2e8f0;
+    overflow-x: hidden; /* Previne overflow horizontal */
 }
 
 /* ==================== TIPOGRAFIA ==================== */
@@ -376,6 +379,7 @@ div[data-testid="stImage"] > div {
     margin: 1.5rem 0;
     box-shadow: 0 2px 8px rgba(24, 44, 75, 0.2);
     position: relative;
+    overflow-x: hidden; /* Previne overflow horizontal */
 }
 
 .section-title {
@@ -386,6 +390,7 @@ div[data-testid="stImage"] > div {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    word-wrap: break-word;
 }
 
 /* Textos dentro das seções do formulário ficam brancos */
@@ -568,236 +573,101 @@ hr {
 /* Responsividade */
 @media (max-width: 768px) {
     .main {
-        padding: 0.5rem !important;
-    }
-
-    .main > div {
-        padding: 0 !important;
-    }
-
-    .form-section {
-        padding: 1rem;
-    }
-
-    h1 {
-        font-size: 1.75rem;
-    }
-
-    .header-bar {
-        padding: 0.75rem;
-        margin: -0.5rem -0.5rem 0.5rem -0.5rem;
-        width: calc(100% + 1rem);
-        margin-left: -0.5rem;
-        margin-right: -0.5rem;
-    }
-
-    .header-content {
-        text-align: center;
-    }
-
-    .header-title {
-        font-size: clamp(1rem, 4vw, 1.25rem);
-        margin: 0;
-    }
-
-    .header-subtitle {
-        font-size: clamp(0.875rem, 3.5vw, 1rem);
-        margin: 0;
-    }
-
-    .stImage {
-        margin: 0 auto !important;
-    }
-
-    .stImage img {
-        width: auto !important;
-        max-width: 100px !important;
-    }
-
-    .stRadio > div {
-        gap: 0.5rem !important;
-    }
-
-    .stRadio > div > label {
-        padding: 0.75rem !important;
-        font-size: 0.875rem !important;
-        min-height: 4rem !important;
-    }
-
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div > select {
-        padding: 0.625rem 0.875rem;
-        font-size: 0.9rem;
-    }
-
-    /* Melhor alinhamento dos botões em mobile */
-    .stButton {
-        margin-top: 0;
-        height: calc(1.75rem + 3rem);
-        display: flex;
-        align-items: flex-end;
-        padding-top: 1.75rem;
-    }
-
-    .stButton > button {
-        height: 3rem;
-        font-size: 0.8rem;
-        padding: 0.75rem 0.75rem;
-        white-space: nowrap;
-        min-width: fit-content;
-    }
-
-    /* Botões de busca em mobile */
-    .stButton > button[aria-label*="Buscar"] {
-        height: 3rem;
-        font-size: 0.75rem;
-        padding: 0.5rem 0.5rem;
-        white-space: nowrap;
-        min-width: fit-content;
-        font-weight: 600;
-    }
-
-    /* Container dos botões de busca em mobile */
-    div[data-testid="column"]:has(.stButton) .stButton {
-        margin-top: 0;
-        height: calc(1.75rem + 3rem);
-        display: flex;
-        align-items: flex-end;
-        padding-top: 1.75rem;
-    }
-
-    .row-widget.stHorizontal {
-        gap: 0.5rem !important;
-    }
-
-    table {
-        font-size: 0.75rem !important;
-    }
-
-    table th,
-    table td {
-        padding: 6px 4px !important;
-        font-size: 0.7rem !important;
-    }
-
-    table th {
-        font-size: 0.65rem !important;
-    }
-
-    table td[style*="text-align: center"] {
-        font-size: 0.65rem !important;
-    }
-
-    * {
-        overflow-x: hidden !important;
-    }
-
-    .section-title {
-        font-size: 1.125rem !important;
-    }
-
-    .stApp > div > div > div > div {
+        padding: 0.25rem !important;
         max-width: 100% !important;
     }
-}
 
-/* Responsividade para tablets */
-@media (max-width: 1024px) and (min-width: 769px) {
-    .main {
-        max-width: 600px;
-        padding: 1rem;
-    }
-    
-    .header-bar {
-        padding: 1rem !important;
-    }
-    
-    .stImage img {
-        max-width: 120px !important;
-    }
-    
-    table th,
-    table td {
-        font-size: 0.8rem !important;
-        padding: 6px 4px !important;
-    }
-}
-
-/* Melhorias para telas muito pequenas */
-@media (max-width: 480px) {
-    .main {
-        padding: 0.25rem;
-    }
-    
     .main > div {
-        padding: 0.75rem;
-        border-radius: 12px;
+        padding: 0.75rem !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
     }
     
-    .form-section {
-        padding: 0.75rem;
-    }
-    
-    .header-bar {
-        padding: 0.5rem !important;
+    .header-container {
+        padding: 1rem 0.5rem !important;
+        margin: -0.75rem -0.75rem 1rem -0.75rem !important;
+        width: calc(100% + 1.5rem) !important;
         border-radius: 0 0 12px 12px !important;
     }
     
-    .stImage img {
-        max-width: 80px !important;
+    .header-content {
+        padding: 0 0.25rem !important;
     }
     
-    h1 {
-        font-size: 1.25rem !important;
+    .header-titles {
+        margin-top: 0.5rem !important;
     }
     
-    .section-title {
-        font-size: 0.9rem !important;
+    .header-container .stImage img {
+        max-width: 70px !important;
     }
     
-    table th,
-    table td {
-        font-size: 0.65rem !important;
-        padding: 3px 1px !important;
+    /* Garantir que textos não quebrem layout */
+    .header-main-title {
+        font-size: clamp(1rem, 4vw, 1.5rem) !important;
+        margin-bottom: 0.25rem !important;
     }
     
-    .stRadio > div > label {
-        padding: 0.75rem;
-        font-size: 0.8rem;
+    .header-subtitle {
+        font-size: clamp(0.8rem, 3.2vw, 1.2rem) !important;
+        margin-bottom: 0.25rem !important;
     }
     
-    /* Botões em telas muito pequenas */
-    .stButton {
-        margin-top: 0;
-        height: calc(1.75rem + 3rem);
-        display: flex;
-        align-items: flex-end;
-        padding-top: 1.75rem;
+    .header-company {
+        font-size: clamp(0.7rem, 2.8vw, 1rem) !important;
     }
+}
 
-    .stButton > button {
-        height: 3rem;
-        font-size: 0.75rem;
-        padding: 0.5rem 0.5rem;
-        white-space: nowrap;
-        min-width: fit-content;
+/* Telas muito pequenas */
+@media (max-width: 480px) {
+    .main {
+        padding: 0.125rem !important;
     }
-
-    .stButton > button[aria-label*="Buscar"] {
-        height: 3rem;
-        font-size: 0.7rem;
-        padding: 0.4rem 0.4rem;
-        white-space: nowrap;
-        min-width: fit-content;
-        font-weight: 600;
+    
+    .main > div {
+        padding: 0.5rem !important;
+        border-radius: 8px !important;
     }
+    
+    .header-container {
+        padding: 0.75rem 0.25rem !important;
+        margin: -0.5rem -0.5rem 0.75rem -0.5rem !important;
+        width: calc(100% + 1rem) !important;
+    }
+    
+    .header-container .stImage img {
+        max-width: 60px !important;
+    }
+    
+    .header-main-title {
+        font-size: clamp(0.9rem, 3.8vw, 1.3rem) !important;
+    }
+    
+    .header-subtitle {
+        font-size: clamp(0.75rem, 3vw, 1.1rem) !important;
+    }
+    
+    .header-company {
+        font-size: clamp(0.65rem, 2.5vw, 0.9rem) !important;
+    }
+}
 
-    div[data-testid="column"]:has(.stButton) .stButton {
-        margin-top: 0;
-        height: calc(1.75rem + 3rem);
-        display: flex;
-        align-items: flex-end;
-        padding-top: 1.75rem;
+/* Telas extra pequenas */
+@media (max-width: 360px) {
+    .header-container .stImage img {
+        max-width: 50px !important;
+    }
+    
+    .header-main-title {
+        font-size: clamp(0.85rem, 3.5vw, 1.2rem) !important;
+    }
+    
+    .header-subtitle {
+        font-size: clamp(0.7rem, 2.8vw, 1rem) !important;
+    }
+    
+    .header-company {
+        font-size: clamp(0.6rem, 2.3vw, 0.85rem) !important;
     }
 }
 
@@ -813,13 +683,15 @@ hr {
 /* Container principal do header */
 .header-container {
     background: linear-gradient(135deg, #182c4b 0%, #243959 100%);
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.75rem; /* Reduzido padding para mobile */
     margin: -1.5rem -1.5rem 2rem -1.5rem;
     border-radius: 0 0 20px 20px;
     box-shadow: 0 4px 20px rgba(24, 44, 75, 0.25);
     text-align: center;
     position: relative;
     overflow: hidden;
+    width: calc(100% + 3rem); /* Garante que ocupe toda a largura */
+    box-sizing: border-box;
 }
 
 /* Efeito de overlay sutil */
@@ -837,55 +709,69 @@ hr {
 .header-content {
     position: relative;
     z-index: 1;
-    max-width: 600px;
+    max-width: 100%;
     margin: 0 auto;
+    padding: 0 0.5rem; /* Adiciona padding interno */
 }
 
 .header-titles {
-    margin-top: 1rem;
+    margin-top: 0.75rem; /* Reduzido para mobile */
 }
 
 .header-main-title {
     color: #182c4b !important; /* Azul escuro */
-    font-size: clamp(1.25rem, 5vw, 2rem) !important;
+    font-size: clamp(1.1rem, 4.5vw, 2rem) !important; /* Reduzido mínimo */
     font-weight: 700 !important;
-    margin: 0 0 0.5rem 0 !important;
-    line-height: 1.2 !important;
+    margin: 0 0 0.25rem 0 !important; /* Reduzido espaçamento */
+    line-height: 1.1 !important; /* Linha mais compacta */
     text-shadow: 0 2px 4px rgba(24, 44, 75, 0.3);
     text-align: center !important;
+    word-wrap: break-word;
 }
 
 .header-subtitle {
     color: #182c4b !important; /* Mesma cor azul escuro */
-    font-size: clamp(1rem, 4vw, 1.5rem) !important;
-    margin: 0 0 0.5rem 0 !important;
+    font-size: clamp(0.85rem, 3.5vw, 1.5rem) !important; /* Reduzido mínimo */
+    margin: 0 0 0.25rem 0 !important; /* Reduzido espaçamento */
+    line-height: 1.2 !important;
+    font-weight: 700 !important; /* Mesma espessura */
+    text-align: center !important;
+    text-shadow: 0 2px 4px rgba(24, 44, 75, 0.3);
+    word-wrap: break-word;
+}
+
+.header-company {
+    color: #182c4b !important; /* Mesma cor azul escuro */
+    font-size: clamp(0.75rem, 3vw, 1.125rem) !important; /* Reduzido mínimo */
+    margin: 0 !important;
     line-height: 1.3 !important;
     font-weight: 700 !important; /* Mesma espessura */
     text-align: center !important;
     text-shadow: 0 2px 4px rgba(24, 44, 75, 0.3);
 }
 
-.header-company {
-    color: #182c4b !important; /* Mesma cor azul escuro */
-    font-size: clamp(0.875rem, 3.5vw, 1.125rem) !important;
-    margin: 0 !important;
-    line-height: 1.4 !important;
-    font-weight: 700 !important; /* Mesma espessura */
-    text-align: center !important;
-    text-shadow: 0 2px 4px rgba(24, 44, 75, 0.3);
-}
-
-/* Logo no header */
+/* Logo no header - melhorado para mobile */
 .header-container .stImage {
     margin: 0 auto !important;
     padding: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+.header-container .stImage > div {
+    margin: 0 auto !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
 }
 
 .header-container .stImage img {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    max-width: 100px !important;
+    max-width: 80px !important; /* Reduzido para mobile */
     height: auto !important;
+    display: block !important;
+    margin: 0 auto !important;
 }
 
 /* ==================== TABELA DE COBERTURAS RESPONSIVA ==================== */
@@ -1129,5 +1015,160 @@ hr {
     
     .responsive-row {
         gap: 0.25rem;
+    }
+}
+
+/* ==================== RESPONSIVIDADE MELHORADA ==================== */
+
+/* Garantir que colunas não quebrem em mobile */
+.row-widget.stHorizontal {
+    gap: 1rem;
+}
+
+/* Responsividade para formulários */
+@media (max-width: 768px) {
+    .form-section {
+        padding: 1rem !important;
+        margin: 1rem 0 !important;
+        border-radius: 12px !important;
+    }
+    
+    .section-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .row-widget.stHorizontal {
+        gap: 0.5rem !important;
+    }
+    
+    /* Melhorar campos de input em mobile */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select {
+        padding: 0.625rem 0.875rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Melhorar botões em mobile */
+    .stButton > button {
+        height: 3rem !important;
+        font-size: 0.8rem !important;
+        padding: 0.75rem 0.75rem !important;
+        white-space: nowrap !important;
+        min-width: fit-content !important;
+    }
+    
+    /* Botões de busca em mobile */
+    .stButton > button[aria-label*="Buscar"] {
+        height: 3rem !important;
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.5rem !important;
+        white-space: nowrap !important;
+        min-width: fit-content !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Radio buttons mais compactos */
+    .stRadio > div {
+        gap: 0.5rem !important;
+    }
+    
+    .stRadio > div > label {
+        padding: 0.75rem !important;
+        font-size: 0.875rem !important;
+        min-height: 4rem !important;
+    }
+    
+    /* Garantir que tabelas não causem overflow */
+    table {
+        font-size: 0.75rem !important;
+        max-width: 100% !important;
+    }
+    
+    table th,
+    table td {
+        padding: 6px 4px !important;
+        font-size: 0.7rem !important;
+    }
+    
+    table th {
+        font-size: 0.65rem !important;
+    }
+    
+    /* Garantir que nada cause overflow horizontal */
+    * {
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    
+    .stApp > div > div > div > div {
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .form-section {
+        padding: 0.75rem !important;
+        margin: 0.75rem 0 !important;
+    }
+    
+    .section-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select {
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.85rem !important;
+    }
+    
+    .stButton > button {
+        height: 2.75rem !important;
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.5rem !important;
+    }
+    
+    .stButton > button[aria-label*="Buscar"] {
+        height: 2.75rem !important;
+        font-size: 0.7rem !important;
+        padding: 0.4rem 0.4rem !important;
+    }
+    
+    .stRadio > div > label {
+        padding: 0.5rem !important;
+        font-size: 0.8rem !important;
+        min-height: 3.5rem !important;
+    }
+    
+    table th,
+    table td {
+        font-size: 0.65rem !important;
+        padding: 3px 1px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .form-section {
+        padding: 0.5rem !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .section-title {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select {
+        padding: 0.4rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .stButton > button {
+        height: 2.5rem !important;
+        font-size: 0.7rem !important;
+        padding: 0.4rem 0.4rem !important;
     }
 } 

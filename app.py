@@ -48,61 +48,75 @@ def load_css():
 # Carregar CSS
 load_css()
 
-# JavaScript simplificado para melhor responsividade
+# JavaScript otimizado e limpo para mobile
+st.markdown("""
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <script>
-// Script minimalista para melhorar a experiência mobile
 document.addEventListener('DOMContentLoaded', function() {
-    // Detectar mobile
     const isMobile = window.innerWidth <= 768;
     
     if (isMobile) {
-        // Ajustar inputs para mobile
         const inputs = document.querySelectorAll('input[type="text"]');
         inputs.forEach(input => {
-            input.style.fontSize = '16px'; // Previne zoom no iOS
+            input.style.fontSize = '16px';
             input.addEventListener('focus', function() {
                 this.style.outline = '2px solid #182c4b';
             });
         });
         
-        // Melhorar botões em mobile
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
-            button.style.minHeight = '44px'; // Tamanho mínimo para touch
+            button.style.minHeight = '44px';
         });
+        
+        document.body.style.overflowX = 'hidden';
+        document.documentElement.style.overflowX = 'hidden';
     }
     
-    // Scroll suave para elementos com erro
     const errorElements = document.querySelectorAll('.error-message');
     if (errorElements.length > 0) {
         errorElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-});
-
-// Função simples para melhorar UX
-window.enhanceFormUX = function() {
-    const inputs = document.querySelectorAll('input[type="text"]');
-    inputs.forEach(input => {
-        if (input.value) {
-            input.style.borderColor = '#16a34a';
-            input.style.borderWidth = '2px';
-        }
+    
+    window.addEventListener('resize', function() {
+        document.body.style.overflowX = 'hidden';
+        document.documentElement.style.overflowX = 'hidden';
     });
-};
+});
 </script>
 """, unsafe_allow_html=True)
 
 def carregar_logo(width=None):
-    """Carrega e exibe o logo da empresa"""
+    """Carrega e exibe o logo da empresa de forma responsiva"""
     try:
-        logo_width = width if width is not None else APP_CONFIG["logo_width"]
-        # Usar HTML direto para controle total do posicionamento
+        # Logo responsivo baseado no tamanho da tela
+        logo_width = width if width is not None else 80  # Reduzido padrão
+        
+        # Usar HTML responsivo para controle total do posicionamento
         st.markdown(f"""
-        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 0 auto;">
+        <div class="logo-container" style="
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%; 
+            margin: 0 auto;
+            padding: 0;
+            max-width: 100%;
+            overflow: hidden;
+        ">
             <img src="data:image/png;base64,{get_logo_base64()}" 
-                 width="{logo_width}" 
-                 style="display: block; margin: 0 auto;" 
+                 style="
+                     max-width: {logo_width}px;
+                     width: auto;
+                     height: auto;
+                     display: block; 
+                     margin: 0 auto;
+                     border-radius: 8px;
+                     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                 " 
                  alt="Logo CPZ">
         </div>
         """, unsafe_allow_html=True)
