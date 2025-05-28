@@ -277,7 +277,7 @@ class SendGridEmailSender:
                     </div>
                     
                     <div class="section">
-                        <div class="section-title">📍 Endereço do Quiosque</div>
+                        <div class="section-title">📍 Identificação do Quiosque</div>
                         <div class="info-row">
                             <span class="label">CEP:</span>
                             <span class="value">{formatar_cep(dados.get('cep', ''))}</span>
@@ -859,7 +859,7 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                         </div>
                         
                         <div class="section">
-                            <div class="section-title">📍 Endereço do Quiosque</div>
+                            <div class="section-title">📍 Identificação do Quiosque</div>
                             <div class="info-row">
                                 <span class="label">CEP:</span>
                                 <span class="value">{formatar_cep(dados['cep'])}</span>
@@ -1179,7 +1179,7 @@ def main():
     
     # Seção Endereço
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">📍 Endereço do Quiosque</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 1])
     with col1:
