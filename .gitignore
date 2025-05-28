@@ -1,0 +1,113 @@
+# ==================== ARQUIVOS SENSÍVEIS ====================
+# NUNCA commitar estes arquivos!
+.env
+*.env
+.env.local
+.env.production
+
+# Credenciais e configurações sensíveis
+config_local.py
+secrets.py
+credentials.json
+*.key
+*.pem
+
+# ==================== PYTHON ====================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==================== STREAMLIT ====================
+# Streamlit cache e configurações sensíveis
+.streamlit/secrets.toml
+
+# ==================== SISTEMA ====================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ==================== LOGS E TEMPORÁRIOS ====================
+# Logs
+*.log
+logs/
+log/
+
+# Temporários
+*.tmp
+*.temp
+*.swp
+*.swo
+
+# Backup
+*.bak
+*.backup
+*.old
+
+# ==================== IDEs ====================
+# Visual Studio Code
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+
+# ==================== OTIMIZAÇÃO DE IMAGENS ====================
+# Backup de imagens originais (manter apenas versões otimizadas)
+*_original.*
+*_backup.* 
