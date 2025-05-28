@@ -51,13 +51,17 @@ h1 {
     color: white;
     border: none;
     border-radius: 12px;
-    padding: 0.75rem 2rem;
+    padding: 0.75rem 1.5rem;
     font-weight: 600;
     font-size: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(24, 44, 75, 0.3);
     width: 100%;
     height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap; /* Previne quebra de texto */
 }
 
 .stButton > button:hover {
@@ -70,18 +74,51 @@ h1 {
     transform: translateY(0);
 }
 
-/* Botões de busca menores */
-.stButton > button[kind="secondary"] {
-    background: #182c4b;
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    height: 2.5rem;
-    box-shadow: 0 2px 8px rgba(24, 44, 75, 0.3);
+/* Botões de busca - alinhamento perfeito com campos de input */
+.stButton {
+    margin-top: 0; /* Remove margem para alinhamento manual */
+    display: flex;
+    align-items: flex-end; /* Alinha pela base */
+    min-height: calc(1.75rem + 3rem); /* Altura do label + input */
 }
 
-/* Alinhamento dos botões de busca com os campos */
+/* Botões de busca específicos com altura correta e alinhamento perfeito */
+.stButton > button[aria-label*="Buscar"] {
+    background: #182c4b;
+    padding: 0.75rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    height: 3rem; /* Mesma altura que os inputs */
+    margin-top: 0;
+    box-shadow: 0 2px 8px rgba(24, 44, 75, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap; /* Previne quebra de texto */
+    min-width: fit-content; /* Ajusta largura ao conteúdo */
+}
+
+.stButton > button[aria-label*="Buscar"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(24, 44, 75, 0.4);
+    background: #0f1f35;
+}
+
+/* Container dos botões de busca - alinhamento preciso */
+div[data-testid="column"]:has(.stButton) .stButton {
+    margin-top: 0;
+    height: calc(1.75rem + 3rem); /* Altura total: label + campo */
+    display: flex;
+    align-items: flex-end;
+    padding-top: 1.75rem; /* Espaço para o label */
+}
+
+/* Alinhamento geral dos botões de formulário */
 .stFormSubmitButton {
-    margin-top: 1.75rem;
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .stFormSubmitButton > button {
@@ -95,10 +132,11 @@ h1 {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 2px 8px rgba(24, 44, 75, 0.3);
     width: 100%;
-    height: 3.5rem;
+    height: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap; /* Previne quebra de texto */
 }
 
 .stFormSubmitButton > button:hover {
@@ -107,12 +145,14 @@ h1 {
     background: #0f1f35;
 }
 
-/* Botão principal do formulário */
+/* Botão principal do formulário (enviar) */
 .stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]) {
     background: #182c4b;
-    height: 3rem;
+    height: 3.5rem;
     margin-top: 0;
     box-shadow: 0 4px 15px rgba(24, 44, 75, 0.3);
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 .stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]):hover {
@@ -528,59 +568,236 @@ hr {
 /* Responsividade */
 @media (max-width: 768px) {
     .main {
-        padding: 1rem 0.5rem;
-        max-width: 100%;
+        padding: 0.5rem !important;
     }
-    
+
     .main > div {
-        padding: 1.5rem;
-        border-radius: 16px;
+        padding: 0 !important;
     }
-    
+
     .form-section {
-        padding: 1.5rem;
+        padding: 1rem;
     }
-    
+
     h1 {
-        font-size: 2rem;
+        font-size: 1.75rem;
+    }
+
+    .header-bar {
+        padding: 0.75rem;
+        margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+        width: calc(100% + 1rem);
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+
+    .header-content {
+        text-align: center;
+    }
+
+    .header-title {
+        font-size: clamp(1rem, 4vw, 1.25rem);
+        margin: 0;
+    }
+
+    .header-subtitle {
+        font-size: clamp(0.875rem, 3.5vw, 1rem);
+        margin: 0;
+    }
+
+    .stImage {
+        margin: 0 auto !important;
+    }
+
+    .stImage img {
+        width: auto !important;
+        max-width: 100px !important;
+    }
+
+    .stRadio > div {
+        gap: 0.5rem !important;
+    }
+
+    .stRadio > div > label {
+        padding: 0.75rem !important;
+        font-size: 0.875rem !important;
+        min-height: 4rem !important;
+    }
+
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div > select {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.9rem;
+    }
+
+    /* Melhor alinhamento dos botões em mobile */
+    .stButton {
+        margin-top: 0;
+        height: calc(1.75rem + 3rem);
+        display: flex;
+        align-items: flex-end;
+        padding-top: 1.75rem;
+    }
+
+    .stButton > button {
+        height: 3rem;
+        font-size: 0.8rem;
+        padding: 0.75rem 0.75rem;
+        white-space: nowrap;
+        min-width: fit-content;
+    }
+
+    /* Botões de busca em mobile */
+    .stButton > button[aria-label*="Buscar"] {
+        height: 3rem;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.5rem;
+        white-space: nowrap;
+        min-width: fit-content;
+        font-weight: 600;
+    }
+
+    /* Container dos botões de busca em mobile */
+    div[data-testid="column"]:has(.stButton) .stButton {
+        margin-top: 0;
+        height: calc(1.75rem + 3rem);
+        display: flex;
+        align-items: flex-end;
+        padding-top: 1.75rem;
+    }
+
+    .row-widget.stHorizontal {
+        gap: 0.5rem !important;
+    }
+
+    table {
+        font-size: 0.75rem !important;
+    }
+
+    table th,
+    table td {
+        padding: 6px 4px !important;
+        font-size: 0.7rem !important;
+    }
+
+    table th {
+        font-size: 0.65rem !important;
+    }
+
+    table td[style*="text-align: center"] {
+        font-size: 0.65rem !important;
+    }
+
+    * {
+        overflow-x: hidden !important;
+    }
+
+    .section-title {
+        font-size: 1.125rem !important;
+    }
+
+    .stApp > div > div > div > div {
+        max-width: 100% !important;
+    }
+}
+
+/* Responsividade para tablets */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .main {
+        max-width: 600px;
+        padding: 1rem;
     }
     
-    /* Barra superior responsiva */
     .header-bar {
         padding: 1rem !important;
     }
     
-    .header-content {
-        flex-direction: column !important;
-        text-align: center !important;
-        gap: 1rem !important;
+    .stImage img {
+        max-width: 120px !important;
     }
     
-    .header-title {
-        font-size: 1.2rem !important;
-        text-align: center !important;
-    }
-    
-    .header-subtitle {
+    table th,
+    table td {
         font-size: 0.8rem !important;
-        text-align: center !important;
+        padding: 6px 4px !important;
+    }
+}
+
+/* Melhorias para telas muito pequenas */
+@media (max-width: 480px) {
+    .main {
+        padding: 0.25rem;
     }
     
-    /* Logo na barra superior em mobile */
-    .stImage {
-        display: flex !important;
-        justify-content: center !important;
+    .main > div {
+        padding: 0.75rem;
+        border-radius: 12px;
     }
     
-    /* Responsividade para radio buttons */
-    .stRadio > div {
-        flex-direction: column;
-        gap: 0.75rem;
+    .form-section {
+        padding: 0.75rem;
+    }
+    
+    .header-bar {
+        padding: 0.5rem !important;
+        border-radius: 0 0 12px 12px !important;
+    }
+    
+    .stImage img {
+        max-width: 80px !important;
+    }
+    
+    h1 {
+        font-size: 1.25rem !important;
+    }
+    
+    .section-title {
+        font-size: 0.9rem !important;
+    }
+    
+    table th,
+    table td {
+        font-size: 0.65rem !important;
+        padding: 3px 1px !important;
     }
     
     .stRadio > div > label {
-        min-width: unset;
-        padding: 1rem;
+        padding: 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Botões em telas muito pequenas */
+    .stButton {
+        margin-top: 0;
+        height: calc(1.75rem + 3rem);
+        display: flex;
+        align-items: flex-end;
+        padding-top: 1.75rem;
+    }
+
+    .stButton > button {
+        height: 3rem;
+        font-size: 0.75rem;
+        padding: 0.5rem 0.5rem;
+        white-space: nowrap;
+        min-width: fit-content;
+    }
+
+    .stButton > button[aria-label*="Buscar"] {
+        height: 3rem;
+        font-size: 0.7rem;
+        padding: 0.4rem 0.4rem;
+        white-space: nowrap;
+        min-width: fit-content;
+        font-weight: 600;
+    }
+
+    div[data-testid="column"]:has(.stButton) .stButton {
+        margin-top: 0;
+        height: calc(1.75rem + 3rem);
+        display: flex;
+        align-items: flex-end;
+        padding-top: 1.75rem;
     }
 }
 

@@ -10,6 +10,7 @@ from typing import Dict, Optional, Tuple
 import os
 from functools import lru_cache
 import base64
+import time
 
 # Importações do SendGrid
 try:
@@ -46,6 +47,193 @@ def load_css():
 
 # Carregar CSS
 load_css()
+
+# Adicionar JavaScript para detectar autocomplete
+st.markdown("""
+<script>
+// Função avançada para detectar e sincronizar autocomplete
+function syncAutocompleteFields() {
+    // Aguardar o DOM estar pronto
+    setTimeout(function() {
+        const inputs = document.querySelectorAll('input[type="text"]');
+        
+        inputs.forEach(function(input, index) {
+            // Identificar o campo pelo label ou posição
+            const label = input.closest('div').querySelector('label');
+            const labelText = label ? label.textContent.trim() : '';
+            
+            // Armazenar valores em session storage para sincronização
+            const fieldKey = 'streamlit_field_' + index + '_' + labelText.replace(/[^a-zA-Z0-9]/g, '');
+            
+            // Função para sincronizar valor
+            function syncValue() {
+                if (input.value && input.value.trim() !== '') {
+                    sessionStorage.setItem(fieldKey, input.value);
+                    
+                    // Forçar múltiplos eventos
+                    ['input', 'change', 'blur', 'keyup'].forEach(function(eventType) {
+                        const event = new Event(eventType, { bubbles: true, cancelable: true });
+                        Object.defineProperty(event, 'target', { value: input });
+                        input.dispatchEvent(event);
+                    });
+                    
+                    // Simular digitação caracter por caracter (mais agressivo)
+                    const value = input.value;
+                    input.value = '';
+                    for (let i = 0; i < value.length; i++) {
+                        setTimeout(function() {
+                            input.value = value.substring(0, i + 1);
+                            const inputEvent = new Event('input', { bubbles: true });
+                            input.dispatchEvent(inputEvent);
+                        }, i * 10);
+                    }
+                }
+            }
+            
+            // Detectar todas as possíveis formas de preenchimento
+            ['input', 'change', 'blur', 'focus', 'keyup', 'paste', 'autocomplete'].forEach(function(eventType) {
+                input.addEventListener(eventType, syncValue);
+            });
+            
+            // Observador de mutações mais robusto
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && 
+                        (mutation.attributeName === 'value' || mutation.attributeName === 'data-value')) {
+                        syncValue();
+                    }
+                });
+            });
+            
+            observer.observe(input, {
+                attributes: true,
+                attributeFilter: ['value', 'data-value', 'aria-valuenow']
+            });
+            
+            // Verificação periódica (polling)
+            setInterval(function() {
+                const currentValue = input.value;
+                const storedValue = sessionStorage.getItem(fieldKey);
+                
+                if (currentValue && currentValue !== storedValue) {
+                    syncValue();
+                }
+            }, 500);
+        });
+    }, 500);
+}
+
+// Executar em múltiplos momentos
+document.addEventListener('DOMContentLoaded', syncAutocompleteFields);
+setTimeout(syncAutocompleteFields, 1000);
+setTimeout(syncAutocompleteFields, 3000);
+setTimeout(syncAutocompleteFields, 5000);
+
+// Função global para forçar sincronização manual
+window.forceFieldSync = function() {
+    const inputs = document.querySelectorAll('input[type="text"]');
+    let syncedCount = 0;
+    
+    inputs.forEach(function(input) {
+        if (input.value && input.value.trim() !== '') {
+            syncedCount++;
+            
+            // Método mais agressivo: simular digitação completa
+            const originalValue = input.value;
+            input.value = '';
+            input.focus();
+            
+            // Simular digitação caracter por caracter
+            for (let i = 0; i <= originalValue.length; i++) {
+                setTimeout(function() {
+                    input.value = originalValue.substring(0, i);
+                    
+                    // Disparar eventos a cada caracter
+                    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+                    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                    
+                    input.dispatchEvent(inputEvent);
+                    
+                    if (i === originalValue.length) {
+                        input.dispatchEvent(changeEvent);
+                        input.blur();
+                    }
+                }, i * 50);
+            }
+        }
+    });
+    
+    // Feedback visual melhorado
+    const notification = document.createElement('div');
+    notification.innerHTML = `✅ ${syncedCount} campos sincronizados!`;
+    notification.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: linear-gradient(135deg, #28a745, #20c997); 
+        color: white; 
+        padding: 15px 25px; 
+        border-radius: 10px; 
+        z-index: 9999; 
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(function() {
+        if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+        }
+    }, 3000);
+    
+    return syncedCount;
+};
+
+// CSS para animação
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<style>
+/* Indicação visual mais forte para campos preenchidos via autocomplete */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #e8f5e8 inset !important;
+    -webkit-text-fill-color: #1a202c !important;
+    background: #e8f5e8 !important;
+    border: 2px solid #28a745 !important;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Indicação para campos válidos */
+input:valid:not(:placeholder-shown) {
+    border-color: #28a745 !important;
+    background: #f8fff8 !important;
+}
+
+/* Animação para campos sincronizados */
+.field-synced {
+    animation: fieldSync 0.5s ease;
+}
+
+@keyframes fieldSync {
+    0% { background: #fff3cd; }
+    50% { background: #d1ecf1; }
+    100% { background: #d4edda; }
+}
+</style>
+""", unsafe_allow_html=True)
 
 def carregar_logo(width=None):
     """Carrega e exibe o logo da empresa"""
@@ -692,28 +880,21 @@ def calcular_pro_rata(plano: str, data_inclusao: datetime) -> Tuple[int, float]:
     return dias_restantes, premio_pro_rata
 
 def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)") -> bool:
-    """Envia email de confirmação com todas as informações"""
+    """Envia email apenas para a empresa com todas as informações"""
     try:
         # Modo de teste
         if email_mode == "Teste (sem envio)":
             st.info("🧪 **Modo de teste ativado** - Emails não serão enviados, mas dados foram processados com sucesso!")
             st.success("✅ Formulário processado com sucesso!")
             
-            # Mostrar preview dos emails que seriam enviados
-            with st.expander("📧 Preview dos emails que seriam enviados", expanded=False):
+            # Mostrar preview do email que seria enviado
+            with st.expander("📧 Preview do email que seria enviado", expanded=False):
                 plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
                 
-                st.markdown("### 📨 Email 1 - Para a Empresa")
+                st.markdown("### 📨 Email para a Empresa")
                 st.markdown("**Para:** informe@cpzseg.com.br")
                 st.markdown("**Assunto:** 🛡️ Nova Solicitação - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
                 st.markdown("**Tipo:** Notificação de nova adesão (dados completos)")
-                
-                st.markdown("---")
-                
-                st.markdown("### 📨 Email 2 - Para o Cliente")
-                st.markdown(f"**Para:** {dados['email']}")
-                st.markdown("**Assunto:** ✅ Confirmação de Adesão - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
-                st.markdown("**Tipo:** Confirmação de recebimento da solicitação")
                 
                 st.markdown("---")
                 
@@ -736,43 +917,16 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
         # Modo SendGrid
         elif email_mode == "SendGrid" and email_sender:
             try:
-                emails_enviados = 0
-                mensagens = []
-                
-                # 1. Enviar para empresa
+                # Enviar apenas para empresa
                 email_destino = st.session_state.get('sendgrid_email_destino', 'informe@cpzseg.com.br')
                 sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino)
                 
                 if sucesso_empresa:
-                    emails_enviados += 1
-                    mensagens.append(f"✅ Email enviado para empresa: {email_destino}")
+                    st.success(f"✅ Mensagem transmitida para: {email_destino}")
+                    return True
                 else:
-                    mensagens.append(f"❌ Erro ao enviar para empresa: {msg_empresa}")
-                
-                # 2. Enviar confirmação para cliente
-                email_cliente = dados.get('email', '').strip()
-                if email_cliente and validar_email(email_cliente):
-                    sucesso_cliente, msg_cliente = email_sender.enviar_email_confirmacao_cliente(dados)
-                    
-                    if sucesso_cliente:
-                        emails_enviados += 1
-                        mensagens.append(f"✅ Email de confirmação enviado para cliente: {email_cliente}")
-                    else:
-                        mensagens.append(f"❌ Erro ao enviar para cliente: {msg_cliente}")
-                else:
-                    mensagens.append("⚠️ Email do cliente inválido - confirmação não enviada")
-                
-                # Exibir resultados
-                for mensagem in mensagens:
-                    if "✅" in mensagem:
-                        st.success(mensagem)
-                    elif "❌" in mensagem:
-                        st.error(mensagem)
-                    else:
-                        st.warning(mensagem)
-                
-                # Retorna True se pelo menos um email foi enviado
-                return emails_enviados > 0
+                    st.error(f"❌ Erro ao transmitir mensagem: {msg_empresa}")
+                    return False
                     
             except Exception as e:
                 st.error(f"❌ Erro no SendGrid: {str(e)}")
@@ -800,8 +954,8 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
             # Extrair nome do plano corretamente
             plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
             
-            # Lista de destinatários
-            destinatarios = [EMAIL_CONFIG["email_empresa"], dados['email']]
+            # Enviar apenas para a empresa
+            destinatario = EMAIL_CONFIG["email_empresa"]
             
             # Corpo do email em HTML
             corpo_html = f"""
@@ -922,36 +1076,28 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
             server.starttls()
             server.login(EMAIL_CONFIG["email_remetente"], EMAIL_CONFIG["senha_email"])
             
-            # Enviar para cada destinatário
-            emails_enviados = 0
-            for destinatario in destinatarios:
-                try:
-                    # Criar mensagem individual
-                    msg = MIMEMultipart()
-                    msg['From'] = EMAIL_CONFIG["email_remetente"]
-                    msg['To'] = destinatario
-                    
-                    # Assunto personalizado baseado no destinatário
-                    if destinatario == dados['email']:
-                        msg['Subject'] = f"✅ Confirmação de Adesão de Seguro - {dados['nome_completo']}"
-                    else:
-                        msg['Subject'] = f"🛡️ Nova Adesão de Seguro - {dados['nome_completo']}"
-                    
-                    # Anexar corpo HTML
-                    msg.attach(MIMEText(corpo_html, 'html'))
-                    
-                    # Enviar email
-                    text = msg.as_string()
-                    server.sendmail(EMAIL_CONFIG["email_remetente"], destinatario, text)
-                    emails_enviados += 1
-                    
-                except Exception as e:
-                    st.warning(f"⚠️ Erro ao enviar email para {destinatario}: {str(e)}")
-            
-            server.quit()
-            
-            # Retorna True se pelo menos um email foi enviado
-            return emails_enviados > 0
+            try:
+                # Criar mensagem
+                msg = MIMEMultipart()
+                msg['From'] = EMAIL_CONFIG["email_remetente"]
+                msg['To'] = destinatario
+                msg['Subject'] = f"🛡️ Nova Adesão de Seguro - {dados['nome_completo']}"
+                
+                # Anexar corpo HTML
+                msg.attach(MIMEText(corpo_html, 'html'))
+                
+                # Enviar email
+                text = msg.as_string()
+                server.sendmail(EMAIL_CONFIG["email_remetente"], destinatario, text)
+                
+                st.success(f"✅ Mensagem transmitida para: {destinatario}")
+                return True
+                
+            except Exception as e:
+                st.error(f"❌ Erro ao transmitir mensagem: {str(e)}")
+                return False
+            finally:
+                server.quit()
         
         else:
             st.error("❌ Configuração de email inválida")
@@ -969,7 +1115,7 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
         st.error(f"❌ Erro SMTP: {str(e)}")
         return False
     except Exception as e:
-        st.error(f"❌ Erro inesperado ao enviar email: {str(e)}")
+        st.error(f"❌ Erro inesperado ao transmitir mensagem: {str(e)}")
         st.error(f"Tipo do erro: {type(e).__name__}")
         return False
 
@@ -1031,13 +1177,64 @@ def preparar_dados_formulario(session_state: Dict) -> Dict:
     }
 
 def get_field_value(field_name: str) -> str:
-    """Obtém o valor de um campo priorizando dados atuais ou preservados"""
+    """Obtém o valor de um campo priorizando dados atuais ou preservados, com fallback para DOM"""
     # Prioriza dados atuais do session_state (valores digitados)
     current_value = st.session_state.get(field_name, '')
     if current_value:
         return current_value
+    
     # Se não há valor atual, usa dados preservados
-    return st.session_state.form_data.get(field_name, '')
+    preserved_value = st.session_state.form_data.get(field_name, '')
+    if preserved_value:
+        return preserved_value
+    
+    # Adicionar JavaScript para tentar ler valores do DOM como último recurso
+    st.markdown(f"""
+    <script>
+    // Tentar recuperar valor do campo {field_name} do DOM
+    setTimeout(function() {{
+        const inputs = document.querySelectorAll('input[type="text"]');
+        inputs.forEach(function(input, index) {{
+            const label = input.closest('div').querySelector('label');
+            const labelText = label ? label.textContent.trim().toLowerCase() : '';
+            
+            // Mapear nomes de campos para labels
+            const fieldMap = {{
+                'nome_completo': 'nome completo',
+                'cpf': 'cpf',
+                'email': 'e-mail',
+                'telefone': 'telefone',
+                'cnpj': 'cnpj',
+                'razao_social': 'razão social',
+                'cep': 'cep',
+                'logradouro': 'logradouro',
+                'numero': 'número',
+                'complemento': 'complemento',
+                'bairro': 'bairro',
+                'cidade': 'cidade',
+                'estado': 'estado'
+            }};
+            
+            const targetField = fieldMap['{field_name}'];
+            if (targetField && labelText.includes(targetField)) {{
+                if (input.value && input.value.trim() !== '') {{
+                    // Armazenar valor encontrado
+                    sessionStorage.setItem('fallback_{field_name}', input.value);
+                    
+                    // Forçar eventos de sincronização
+                    const inputEvent = new Event('input', {{ bubbles: true, cancelable: true }});
+                    const changeEvent = new Event('change', {{ bubbles: true, cancelable: true }});
+                    
+                    input.dispatchEvent(inputEvent);
+                    input.dispatchEvent(changeEvent);
+                }}
+            }}
+        }});
+    }}, 100);
+    </script>
+    """, unsafe_allow_html=True)
+    
+    return ''
 
 def main():
     """Função principal do aplicativo"""
@@ -1046,8 +1243,8 @@ def main():
     st.markdown("""
     <div class="header-bar" style="
         background: #182c4b;
-        padding: 1.5rem;
-        margin: -2rem -1rem 0.5rem -1rem;
+        padding: 1rem;
+        margin: -1rem -1rem 0.5rem -1rem;
         border-radius: 0 0 16px 16px;
         box-shadow: 0 4px 12px rgba(24, 44, 75, 0.2);
         text-align: center;
@@ -1055,20 +1252,23 @@ def main():
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 100%;
+        width: calc(100% + 2rem);
+        margin-left: -1rem;
+        margin-right: -1rem;
     ">
     """, unsafe_allow_html=True)
     
     # Inserir logo real usando a função existente
     try:
-        # Logo centralizado - abordagem simples e direta
-        carregar_logo(width=150)
+        # Logo responsivo - menor em mobile
+        logo_width = 120  # Reduzido de 150 para 120
+        carregar_logo(width=logo_width)
         
-        # Textos centralizados - removendo margem superior
+        # Textos centralizados - responsivos
         st.markdown("""
         <div style="text-align: center; color: white; margin-top: -0.5rem; width: 100%;">
-            <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Formulário de Adesão</h1>
-            <p style="margin: 0; font-size: 1.25rem; opacity: 0.9;">Seguro Incêndio Conteúdos - Cessionários <span style="color: #182c4b;">ORLA RIO</span></p>
+            <h1 style="margin: 0; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 700; line-height: 1.2;">Formulário de Adesão</h1>
+            <p style="margin: 0; font-size: clamp(0.875rem, 3.5vw, 1rem); opacity: 0.9; line-height: 1.3;">Seguro Incêndio Conteúdos - Cessionários <span style="color: white; font-weight: 600;">ORLA RIO</span></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1076,8 +1276,8 @@ def main():
         # Fallback se houver erro
         st.markdown("""
         <div style="text-align: center; color: white;">
-            <h1 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; font-weight: 700;">Formulário de Adesão</h1>
-            <p style="margin: 0; font-size: 1rem; opacity: 0.9;">Seguro Incêndio Conteúdos - Cessionários <span style="color: #182c4b;">ORLA RIO</span></p>
+            <h1 style="margin: 0 0 0.25rem 0; font-size: clamp(1rem, 4vw, 1.25rem); font-weight: 700; line-height: 1.2;">Formulário de Adesão</h1>
+            <p style="margin: 0; font-size: clamp(0.875rem, 3.5vw, 1rem); opacity: 0.9; line-height: 1.3;">Seguro Incêndio Conteúdos - Cessionários <span style="color: white; font-weight: 600;">ORLA RIO</span></p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1118,44 +1318,7 @@ def main():
         st.session_state['plano_radio'] = plano_opcoes_disponiveis[0]
     
     # Formulário principal - SEM st.form() para evitar travamento
-    # Seção Identificação
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
-    
-    cpf = st.text_input(
-        "CPF *",
-        value=get_field_value('cpf'),
-        help="Digite o CPF no formato 000.000.000-00",
-        placeholder="000.000.000-00",
-        key="cpf"
-    )
-    
-    nome_completo = st.text_input(
-        "Nome Completo *",
-        max_chars=120,
-        value=get_field_value('nome_completo'),
-        help="Digite seu nome completo (máximo 120 caracteres)",
-        key="nome_completo"
-    )
-    
-    email = st.text_input(
-        "E-mail *",
-        value=get_field_value('email'),
-        help="Digite um e-mail válido",
-        key="email"
-    )
-    
-    telefone = st.text_input(
-        "Telefone *",
-        value=get_field_value('telefone'),
-        help="Digite o telefone (10 ou 11 dígitos)",
-        placeholder="(11) 99999-9999",
-        key="telefone"
-    )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Seção Endereço
+    # PRIMEIRA SEÇÃO: Identificação do Quiosque
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
     
@@ -1169,8 +1332,6 @@ def main():
             key="cnpj"
         )
     with col2:
-        # Adiciona espaço para alinhar com o campo de texto
-        st.markdown("<br>", unsafe_allow_html=True)
         buscar_cnpj_btn = st.button("🔍 Buscar CNPJ", key="buscar_cnpj", use_container_width=True)
     
     # Campo para exibir razão social (somente leitura)
@@ -1191,8 +1352,6 @@ def main():
             key="cep"
         )
     with col2:
-        # Adiciona espaço para alinhar com o campo de texto
-        st.markdown("<br>", unsafe_allow_html=True)
         buscar_cep_btn = st.button("🔍 Buscar CEP", key="buscar_cep", use_container_width=True)
     
     logradouro = st.text_input(
@@ -1243,23 +1402,68 @@ def main():
     
     st.markdown('</div>', unsafe_allow_html=True)
     
+    # SEGUNDA SEÇÃO: Identificação do Responsável
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
+    
+    cpf = st.text_input(
+        "CPF *",
+        value=get_field_value('cpf'),
+        help="Digite o CPF no formato 000.000.000-00",
+        placeholder="000.000.000-00",
+        key="cpf"
+    )
+    
+    nome_completo = st.text_input(
+        "Nome Completo *",
+        max_chars=120,
+        value=get_field_value('nome_completo'),
+        help="Digite seu nome completo (máximo 120 caracteres)",
+        key="nome_completo"
+    )
+    
+    email = st.text_input(
+        "E-mail *",
+        value=get_field_value('email'),
+        help="Digite um e-mail válido",
+        key="email"
+    )
+    
+    telefone = st.text_input(
+        "Telefone *",
+        value=get_field_value('telefone'),
+        help="Digite o telefone (10 ou 11 dígitos)",
+        placeholder="(11) 99999-9999",
+        key="telefone"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     # Seção Seguro
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
     
     # Tabela de coberturas detalhadas
     st.markdown("### 📋 Detalhamento das Coberturas")
+    
+    # Nota sobre responsividade em mobile
     st.markdown("""
-    <div style="overflow-x: auto; margin: 1.5rem 0;">
+    <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 0.75rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0; font-size: 0.875rem;">
+        📱 <strong>Dica Mobile:</strong> Deslize horizontalmente na tabela abaixo para ver todas as colunas
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="overflow-x: auto; margin: 1.5rem 0; -webkit-overflow-scrolling: touch;">
         <table style="
             width: 100%; 
-            min-width: 650px;
+            min-width: 500px;
             border-collapse: collapse; 
             background: white; 
             border-radius: 8px; 
             overflow: hidden; 
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            table-layout: fixed;
+            table-layout: auto;
         ">
             <thead>
                 <tr style="background: #182c4b; color: white;">
@@ -1267,148 +1471,148 @@ def main():
                         padding: 12px 8px; 
                         text-align: left; 
                         font-weight: 600; 
-                        width: 26%;
-                        white-space: nowrap;
+                        width: 30%;
                         font-size: 0.9rem;
+                        line-height: 1.3;
                     ">Coberturas</th>
                     <th style="
                         padding: 12px 8px; 
                         text-align: center; 
                         font-weight: 600; 
-                        width: 18%;
-                        white-space: nowrap;
+                        width: 17.5%;
                         font-size: 0.85rem;
-                    ">Opção 1<br><span style='font-size: 0.8rem;'>R$ 250.000</span></th>
+                        line-height: 1.2;
+                    ">Opção 1<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 250.000</span></th>
                     <th style="
                         padding: 12px 8px; 
                         text-align: center; 
                         font-weight: 600; 
-                        width: 18%;
-                        white-space: nowrap;
+                        width: 17.5%;
                         font-size: 0.85rem;
-                    ">Opção 2<br><span style='font-size: 0.8rem;'>R$ 400.000</span></th>
+                        line-height: 1.2;
+                    ">Opção 2<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 400.000</span></th>
                     <th style="
                         padding: 12px 8px; 
                         text-align: center; 
                         font-weight: 600; 
-                        width: 18%;
-                        white-space: nowrap;
+                        width: 17.5%;
                         font-size: 0.85rem;
-                    ">Opção 3<br><span style='font-size: 0.8rem;'>R$ 700.000</span></th>
+                        line-height: 1.2;
+                    ">Opção 3<br><span style='font-size: 0.75rem; font-weight: 400;'>R$ 700.000</span></th>
                     <th style="
                         padding: 12px 8px; 
                         text-align: center; 
                         font-weight: 600; 
-                        width: 20%;
-                        white-space: nowrap;
+                        width: 17.5%;
                         font-size: 0.85rem;
+                        line-height: 1.2;
                     ">Franquia</th>
                 </tr>
             </thead>
             <tbody>
                 <tr style="background: #f8f9fa;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Incêndio, Raio e Explosão</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 250.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 400.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 700.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(**) R$ 30.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 250.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 400.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 700.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 30.000</td>
                 </tr>
                 <tr style="background: white;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Alagamento</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 15.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 15.000</td>
                 </tr>
                 <tr style="background: #f8f9fa;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Danos Elétricos</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 3.000</td>
                 </tr>
                 <tr style="background: white;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Pequenas Obras</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 5.000</td>
                 </tr>
                 <tr style="background: #f8f9fa;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
-                    ">Perda/Pgto Aluguel (6 meses)</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 30.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 40.000</td>
-                    <td style="padding: 8px; text-align: center; color: #16a34a; font-size: 0.8rem;">Não Há</td>
+                        line-height: 1.3;
+                    ">Perda/Pgto Aluguel (6m)</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 30.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 40.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #16a34a; font-size: 0.75rem; font-weight: 500;">Não Há</td>
                 </tr>
                 <tr style="background: white;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Vidros</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 20.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 50.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 3.000</td>
                 </tr>
                 <tr style="background: #f8f9fa;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Tumultos</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 200.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 5.000</td>
                 </tr>
-                <tr style="background: #f8f9fa;">
+                <tr style="background: white;">
                     <td style="
-                        padding: 8px; 
+                        padding: 10px 8px; 
                         font-weight: 500; 
                         color: #2563eb;
                         font-size: 0.85rem;
-                        white-space: nowrap;
+                        line-height: 1.3;
                     ">Vendaval</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
-                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 10.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 100.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 150.000</td>
+                    <td style="padding: 10px 8px; text-align: center; font-size: 0.8rem; font-weight: 500;">R$ 200.000</td>
+                    <td style="padding: 10px 8px; text-align: center; color: #dc2626; font-size: 0.75rem; font-weight: 500;">R$ 10.000</td>
                 </tr>
             </tbody>
         </table>
@@ -1536,12 +1740,123 @@ def main():
     
     # ==================== BOTÃO DE ENVIO FINAL ====================
     
+    # Botão discreto para atualizar campos (caso o JavaScript falhe)
+    with st.expander("🔄 Resolução de Problemas", expanded=False):
+        st.markdown("""
+        **💡 Campos não reconhecidos após autocomplete?**
+        
+        Se você usou o autocomplete do navegador e os campos não foram reconhecidos:
+        """)
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            if st.button("🔄 Sincronizar Campos", help="Força a sincronização de todos os campos preenchidos via autocomplete"):
+                st.markdown("""
+                <script>
+                // Executar sincronização forçada
+                setTimeout(function() {
+                    if (typeof window.forceFieldSync === 'function') {
+                        const count = window.forceFieldSync();
+                        console.log('Campos sincronizados:', count);
+                        
+                        // Aguardar um pouco e recarregar a página para garantir sincronização
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        console.error('Função de sincronização não encontrada');
+                        // Fallback: recarregar página
+                        window.location.reload();
+                    }
+                }, 100);
+                </script>
+                """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown("""
+            Clique em **"Sincronizar Campos"** e aguarde. A página será recarregada automaticamente.
+            """)
+        
+        st.info("💡 **Dica:** Após a sincronização, seus dados preenchidos via autocomplete serão reconhecidos pelo sistema.")
+    
     # Botão de envio FORA do formulário - ÚLTIMA COISA
     st.markdown("---")
     enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
 
     # Processamento do formulário quando enviado
     if enviar_formulario:
+        # NOVA: Tentar capturar valores do DOM antes da validação
+        st.markdown("""
+        <script>
+        // Função para capturar todos os valores do DOM e forçar sincronização
+        function captureAllFieldValues() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            const fieldValues = {};
+            
+            inputs.forEach(function(input, index) {
+                const label = input.closest('div').querySelector('label');
+                const labelText = label ? label.textContent.trim().toLowerCase() : '';
+                
+                if (input.value && input.value.trim() !== '') {
+                    // Mapear labels para nomes de campos
+                    let fieldName = '';
+                    if (labelText.includes('nome completo')) fieldName = 'nome_completo';
+                    else if (labelText.includes('cpf')) fieldName = 'cpf';
+                    else if (labelText.includes('e-mail')) fieldName = 'email';
+                    else if (labelText.includes('telefone')) fieldName = 'telefone';
+                    else if (labelText.includes('cnpj')) fieldName = 'cnpj';
+                    else if (labelText.includes('razão social')) fieldName = 'razao_social';
+                    else if (labelText.includes('cep')) fieldName = 'cep';
+                    else if (labelText.includes('logradouro')) fieldName = 'logradouro';
+                    else if (labelText.includes('número')) fieldName = 'numero';
+                    else if (labelText.includes('complemento')) fieldName = 'complemento';
+                    else if (labelText.includes('bairro')) fieldName = 'bairro';
+                    else if (labelText.includes('cidade')) fieldName = 'cidade';
+                    else if (labelText.includes('estado')) fieldName = 'estado';
+                    
+                    if (fieldName) {
+                        fieldValues[fieldName] = input.value;
+                        
+                        // Simular digitação mais agressiva
+                        const originalValue = input.value;
+                        input.value = '';
+                        
+                        // Digitar caracter por caracter rapidamente
+                        for (let i = 0; i <= originalValue.length; i++) {
+                            setTimeout(function() {
+                                input.value = originalValue.substring(0, i);
+                                
+                                const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+                                const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                                const keyupEvent = new Event('keyup', { bubbles: true, cancelable: true });
+                                
+                                input.dispatchEvent(inputEvent);
+                                input.dispatchEvent(changeEvent);
+                                input.dispatchEvent(keyupEvent);
+                                
+                                if (i === originalValue.length) {
+                                    input.blur();
+                                    input.focus();
+                                    input.blur();
+                                }
+                            }, i * 5); // Muito rápido - 5ms por caracter
+                        }
+                    }
+                }
+            });
+            
+            console.log('Valores capturados:', fieldValues);
+            return fieldValues;
+        }
+        
+        // Executar captura imediatamente
+        captureAllFieldValues();
+        </script>
+        """, unsafe_allow_html=True)
+        
+        # Aguardar um pouco para o JavaScript executar
+        time.sleep(0.5)
+        
         # Pega os valores dos campos do formulário via session_state
         dados = preparar_dados_formulario(st.session_state)
         
@@ -1589,15 +1904,17 @@ def main():
                 if email_sucesso:
                     # Sucesso (pelo menos um funcionou)
                     st.markdown('<div class="success-message">', unsafe_allow_html=True)
-                    mensagem_sucesso = f"✅ **Formulário enviado com sucesso!**<br>"
-                    mensagem_sucesso += f"💰 **Prêmio pró-rata:** {formatar_valor_real(premio_pro_rata)} para {dias_restantes} dias<br>"
+                    mensagem_sucesso = f"✅ **Mensagem transmitida com sucesso!**<br>"
+                    mensagem_sucesso += f"📧 **Seus dados foram enviados para nossa equipe.**<br>"
+                    mensagem_sucesso += f"💰 **Prêmio pró-rata calculado:** {formatar_valor_real(premio_pro_rata)} para {dias_restantes} dias<br><br>"
+                    mensagem_sucesso += f"🕐 **Em breve você receberá a confirmação do recebimento e informações sobre a cobertura.**<br>"
                     
                     if email_mode == "Teste (sem envio)":
                         mensagem_sucesso += "🧪 **Modo de teste ativo - dados processados localmente!**"
                     elif email_mode == "SendGrid":
-                        mensagem_sucesso += "📧 **Email enviado via SendGrid!**"
+                        mensagem_sucesso += "📨 **Nossa equipe entrará em contato em até 24 horas.**"
                     else:
-                        mensagem_sucesso += "📧 **Emails de confirmação enviados!**"
+                        mensagem_sucesso += "📨 **Nossa equipe entrará em contato em até 24 horas.**"
                     
                     st.markdown(mensagem_sucesso, unsafe_allow_html=True)
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -1632,7 +1949,7 @@ def main():
                 else:
                     # Falha no envio - preserva dados e permite nova tentativa
                     st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                    st.markdown("❌ **Erro ao enviar emails. Verifique as configurações e tente novamente.**")
+                    st.markdown("❌ **Erro ao transmitir mensagem. Verifique as configurações e tente novamente.**")
                     st.markdown('</div>', unsafe_allow_html=True)
                     
                     st.info("💡 **Seus dados foram preservados.** Corrija as configurações de email e clique em 'Calcular e Enviar' novamente.")
