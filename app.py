@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Dict, Optional, Tuple
 import os
 from functools import lru_cache
+import base64
 
 # Importações do SendGrid
 try:
@@ -34,453 +35,41 @@ st.set_page_config(
 # ==================== CONFIGURAÇÕES ====================
 
 # CSS customizado para estética moderna e agradável
-st.markdown("""
-<style>
-    /* Importar fonte moderna do Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    /* Configuração geral da página */
-    .stApp {
-        background: #ffffff;
-        min-height: 100vh;
-    }
-    
-    /* Container principal */
-    .main {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        max-width: 520px;
-        margin: 0 auto;
-        padding: 1rem 0.5rem;
-    }
-    
-    /* Card principal do formulário */
-    .main > div {
-        background: #ffffff;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        padding: 1.5rem;
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Título principal */
-    h1 {
-        color: #1a202c !important;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 2rem;
-        font-size: 2.5rem;
-    }
-    
-    /* Botões principais */
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        width: 100%;
-        height: 3rem;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-    }
-    
-    .stButton > button:active {
-        transform: translateY(0);
-    }
-    
-    /* Botões de busca menores */
-    .stButton > button[kind="secondary"] {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-        height: 2.5rem;
-        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
-    }
-    
-    /* Alinhamento dos botões de busca com os campos */
-    .stFormSubmitButton {
-        margin-top: 1.75rem;
-    }
-    
-    .stFormSubmitButton > button {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        color: white !important;
-        border: none;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
-        width: 100%;
-        height: 3.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .stFormSubmitButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
-        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-    }
-    
-    /* Botão principal do formulário */
-    .stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]) {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        height: 3rem;
-        margin-top: 0;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]):hover {
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-    }
-    
-    /* Campos de input */
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div > select {
-        border: 2px solid #d1d5db;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: #ffffff !important;
-        color: #1a202c !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-    }
-    
-    .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div > select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        outline: none;
-        background: #ffffff !important;
-    }
-    
-    /* Estados específicos dos campos para garantir fundo branco */
-    .stTextInput > div > div > input:hover,
-    .stTextInput > div > div > input:active,
-    .stTextInput > div > div > input:valid,
-    .stTextInput > div > div > input:invalid,
-    .stSelectbox > div > div > select:hover,
-    .stSelectbox > div > div > select:active,
-    .stSelectbox > div > div > select:valid,
-    .stSelectbox > div > div > select:invalid {
-        background: #ffffff !important;
-        color: #1a202c !important;
-    }
-    
-    /* Autocomplete e preenchimento automático */
-    .stTextInput > div > div > input:-webkit-autofill,
-    .stTextInput > div > div > input:-webkit-autofill:hover,
-    .stTextInput > div > div > input:-webkit-autofill:focus,
-    .stTextInput > div > div > input:-webkit-autofill:active {
-        -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-        -webkit-text-fill-color: #1a202c !important;
-        background: #ffffff !important;
-    }
-    
-    /* Labels dos campos */
-    .stTextInput > label,
-    .stSelectbox > label {
-        color: #1a202c !important;
-        font-weight: 600;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Seções do formulário */
-    .form-section {
-        background: #f8f9fa;
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #1e3a8a;
-        border-radius: 16px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        position: relative;
-    }
-    
-    .section-title {
-        color: #1a202c !important;
-        font-size: 1.25rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    
-    /* Mensagens de sucesso */
-    .success-message {
-        background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
-        color: #22543d;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #9ae6b4;
-        margin: 1.5rem 0;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
-    }
-    
-    /* Mensagens de erro */
-    .error-message {
-        background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
-        color: #742a2a;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #feb2b2;
-        margin: 1.5rem 0;
-        font-weight: 600;
-        box-shadow: 0 4px 12px rgba(245, 101, 101, 0.15);
-    }
-    
-    /* Avisos */
-    .stAlert {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Divisores */
-    hr {
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
-        margin: 1.5rem 0;
-    }
-    
-    /* Colunas */
-    .row-widget.stHorizontal {
-        gap: 1rem;
-    }
-    
-    /* Campos desabilitados */
-    .stTextInput > div > div > input:disabled {
-        background: #e5e7eb;
-        color: #1a202c;
-        border-color: #d1d5db;
-    }
-    
-    /* Placeholder text */
-    .stTextInput > div > div > input::placeholder {
-        color: #9ca3af;
-        font-style: italic;
-    }
-    
-    /* Selectbox styling */
-    .stSelectbox > div > div {
-        background: #ffffff !important;
-        border-radius: 12px;
-    }
-    
-    /* Garantir que o selectbox interno também seja branco */
-    .stSelectbox > div > div > select,
-    .stSelectbox > div > div > div {
-        background: #ffffff !important;
-        color: #1a202c !important;
-    }
-    
-    /* Help text */
-    .stTextInput > div > div > div,
-    .stSelectbox > div > div > div {
-        color: #6b7280;
-        font-size: 0.75rem;
-        margin-top: 0.25rem;
-    }
-    
-    /* Logo container */
-    .stImage {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
-    
-    /* Responsividade */
-    @media (max-width: 768px) {
-        .main {
-            padding: 1rem 0.5rem;
-            max-width: 100%;
-        }
-        
-        .main > div {
-            padding: 1.5rem;
-            border-radius: 16px;
-        }
-        
-        .form-section {
-            padding: 1.5rem;
-        }
-        
-        h1 {
-            font-size: 2rem;
-        }
-        
-        /* Barra superior responsiva */
-        .header-bar {
-            padding: 1rem !important;
-        }
-        
-        .header-content {
-            flex-direction: column !important;
-            text-align: center !important;
-            gap: 1rem !important;
-        }
-        
-        .header-title {
-            font-size: 1.2rem !important;
-            text-align: center !important;
-        }
-        
-        .header-subtitle {
-            font-size: 0.8rem !important;
-            text-align: center !important;
-        }
-        
-        /* Logo na barra superior em mobile */
-        .stImage {
-            display: flex !important;
-            justify-content: center !important;
-        }
-    }
-    
-    /* Animações suaves */
-    * {
-        transition: all 0.2s ease;
-    }
-    
-    /* Scrollbar personalizada */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: #667eea;
-        border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #5a67d8;
-    }
-    
-    /* Garantir que todos os textos fiquem escuros */
-    .stMarkdown, .stMarkdown p, .stMarkdown div {
-        color: #1a202c !important;
-    }
-    
-    /* Texto dos botões de formulário */
-    .stFormSubmitButton > button {
-        color: white !important;
-    }
-    
-    /* Divisor mais sutil */
-    hr {
-        border: none;
-        height: 1px;
-        background: #e2e8f0;
-        margin: 2rem 0;
-    }
-    
-    /* Estilização dos Radio Buttons para Planos */
-    .stRadio > div {
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-    
-    .stRadio > div > label {
-        background: #ffffff;
-        border: 2px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 1.5rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        flex: 1;
-        min-width: 150px;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        position: relative;
-        overflow: hidden;
-        margin: 0;
-    }
-    
-    .stRadio > div > label:hover {
-        border-color: #667eea;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
-    }
-    
-    /* Estilo quando selecionado */
-    .stRadio > div > label:has(input:checked) {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-color: #667eea;
-        color: white;
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-    }
-    
-    .stRadio > div > label:has(input:checked) > div {
-        color: white !important;
-    }
-    
-    /* Esconder o radio button padrão */
-    .stRadio input[type="radio"] {
-        display: none;
-    }
-    
-    /* Estilizar o texto dos radio buttons */
-    .stRadio > div > label > div {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        color: #1a202c;
-        font-weight: 600;
-        white-space: pre-line;
-        line-height: 1.4;
-    }
-    
-    .stRadio > div > label:has(input:checked) > div {
-        color: white !important;
-    }
-    
-    /* Responsividade para radio buttons */
-    @media (max-width: 768px) {
-        .stRadio > div {
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-        
-        .stRadio > div > label {
-            min-width: unset;
-            padding: 1rem;
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
+def load_css():
+    """Carrega CSS do arquivo externo"""
+    try:
+        with open("styles.css", "r", encoding="utf-8") as f:
+            css_content = f.read()
+        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("⚠️ Arquivo styles.css não encontrado. Usando estilos padrão.")
 
-def carregar_logo():
+# Carregar CSS
+load_css()
+
+def carregar_logo(width=None):
     """Carrega e exibe o logo da empresa"""
     try:
-        st.image(APP_CONFIG["logo_path"], width=APP_CONFIG["logo_width"])
+        logo_width = width if width is not None else APP_CONFIG["logo_width"]
+        # Usar HTML direto para controle total do posicionamento
+        st.markdown(f"""
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 0 auto;">
+            <img src="data:image/png;base64,{get_logo_base64()}" 
+                 width="{logo_width}" 
+                 style="display: block; margin: 0 auto;" 
+                 alt="Logo CPZ">
+        </div>
+        """, unsafe_allow_html=True)
     except FileNotFoundError:
         st.warning(MENSAGENS["logo_nao_encontrado"])
+
+def get_logo_base64():
+    """Converte o logo para base64 para embedding direto no HTML"""
+    try:
+        with open(APP_CONFIG["logo_path"], "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        return ""
 
 def validar_cnpj(cnpj: str) -> bool:
     """Valida se o CNPJ tem 14 dígitos e formato correto"""
@@ -580,7 +169,7 @@ class SendGridEmailSender:
         
         self.sg = SendGridAPIClient(api_key=self.api_key)
     
-    def enviar_email_formulario(self, dados_formulario, email_destino="seguros@grupocp.com.br"):
+    def enviar_email_formulario(self, dados_formulario, email_destino="informe@cpzseg.com.br"):
         """
         Envia email com dados do formulário
         
@@ -639,10 +228,10 @@ class SendGridEmailSender:
             <style>
                 body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                .header {{ background: #182c4b; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
                 .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
                 .section {{ margin-bottom: 25px; }}
-                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }}
+                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #182c4b; padding-bottom: 5px; }}
                 .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
                 .label {{ font-weight: bold; color: #4a5568; }}
                 .value {{ color: #2d3748; }}
@@ -805,10 +394,10 @@ class SendGridEmailSender:
             <style>
                 body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
                 .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background: linear-gradient(135deg, #48bb78, #38a169); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                .header {{ background: #182c4b; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
                 .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
                 .section {{ margin-bottom: 25px; }}
-                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #48bb78; padding-bottom: 5px; }}
+                .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #182c4b; padding-bottom: 5px; }}
                 .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
                 .label {{ font-weight: bold; color: #4a5568; }}
                 .value {{ color: #2d3748; }}
@@ -908,82 +497,52 @@ class SendGridEmailSender:
 
 def configurar_sendgrid_streamlit():
     """
-    Função para configurar SendGrid no Streamlit
+    Função para configurar SendGrid no Streamlit - MODO PRODUÇÃO
     """
-    # Configuração na sidebar
-    st.sidebar.header("⚙️ Configuração Email")
+    # EM PRODUÇÃO: Não mostrar configurações na sidebar
+    # Tentar carregar configurações do secrets.toml primeiro
+    api_key_from_secrets = None
+    email_destino_from_secrets = "informe@cpzseg.com.br"
+    email_mode = "SendGrid"  # Forçar SendGrid em produção
     
-    # Opção para usar modo de teste ou SendGrid
-    email_mode = st.sidebar.selectbox(
-        "Modo de Email:",
-        ["Teste (sem envio)", "SendGrid", "SMTP Tradicional"],
-        help="Escolha como enviar os emails do formulário"
-    )
-    
-    if email_mode == "SendGrid":
-        if not SENDGRID_AVAILABLE:
-            st.sidebar.error("❌ SendGrid não instalado! Execute: pip install sendgrid")
-            return None, False, email_mode
-        
-        # Tentar carregar configurações do secrets.toml primeiro
-        api_key_from_secrets = None
-        email_destino_from_secrets = "seguros@grupocp.com.br"
-        
-        try:
-            if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
-                api_key_from_secrets = st.secrets["sendgrid"].get("api_key", "")
-                email_destino_from_secrets = st.secrets["sendgrid"].get("email_destino", "seguros@grupocp.com.br")
-                
-                if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui":
-                    st.sidebar.success("🔐 Configuração carregada do secrets.toml")
-        except Exception:
-            pass  # Ignora erros de secrets
-        
-        # Input para API Key (com valor padrão do secrets se disponível)
-        api_key = st.sidebar.text_input(
-            "SendGrid API Key:",
-            value=api_key_from_secrets if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui" else "",
-            type="password",
-            help="Cole aqui sua API Key do SendGrid ou configure no secrets.toml",
-            key="sendgrid_api_key"
-        )
-        
-        # Input para email de destino (com valor padrão do secrets se disponível)
-        email_destino = st.sidebar.text_input(
-            "Email de Destino:",
-            value=email_destino_from_secrets,
-            help="Email que receberá as solicitações",
-            key="sendgrid_email_destino"
-        )
-        
-        if api_key:
-            try:
-                sender = SendGridEmailSender(api_key)
-                st.sidebar.success("✅ SendGrid configurado!")
-                
-                # Mostrar informações de configuração
-                if api_key_from_secrets and api_key == api_key_from_secrets:
-                    st.sidebar.info("📋 Usando configuração do secrets.toml")
-                else:
-                    st.sidebar.info("📋 Usando configuração manual")
-                
-                return sender, True, email_mode
-            except Exception as e:
-                st.sidebar.error(f"❌ Erro na configuração: {str(e)}")
-                return None, False, email_mode
-        else:
-            if api_key_from_secrets:
-                st.sidebar.warning("⚠️ Configure a API Key no secrets.toml ou insira manualmente")
-            else:
-                st.sidebar.warning("⚠️ Insira a API Key do SendGrid")
-            return None, False, email_mode
+    try:
+        if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
+            api_key_from_secrets = st.secrets["sendgrid"].get("api_key", "")
+            email_destino_from_secrets = st.secrets["sendgrid"].get("email_destino", "informe@cpzseg.com.br")
             
-    elif email_mode == "SMTP Tradicional":
-        st.sidebar.info("📧 Usando configuração SMTP tradicional")
-        return None, True, email_mode
-    else:
-        st.sidebar.info("📧 Modo de teste ativo - emails não serão enviados")
-        return None, True, email_mode
+            if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui":
+                # Configuração encontrada no secrets.toml
+                try:
+                    sender = SendGridEmailSender(api_key_from_secrets)
+                    return sender, True, email_mode
+                except Exception as e:
+                    st.error(f"❌ Erro na configuração do SendGrid: {str(e)}")
+                    return None, False, "Teste (sem envio)"
+    except Exception:
+        pass  # Ignora erros de secrets
+    
+    # Tentar variáveis de ambiente como fallback
+    api_key_env = os.getenv('SENDGRID_API_KEY')
+    if api_key_env:
+        try:
+            sender = SendGridEmailSender(api_key_env)
+            return sender, True, email_mode
+        except Exception as e:
+            st.error(f"❌ Erro na configuração do SendGrid via env: {str(e)}")
+            return None, False, "Teste (sem envio)"
+    
+    # Se chegou aqui, não há configuração válida
+    st.error("❌ Configuração de email não encontrada! Configure o SendGrid no secrets.toml ou variáveis de ambiente.")
+    st.info("📋 Para configurar, adicione no arquivo `.streamlit/secrets.toml`:")
+    st.code("""
+[sendgrid]
+api_key = "SG.sua_api_key_real_aqui"
+email_destino = "informe@cpzseg.com.br"
+from_email = "noreply@cpzseg.com.br"
+from_name = "Grupo CPZ - Formulários"
+    """)
+    
+    return None, False, "Teste (sem envio)"
 
 @lru_cache(maxsize=100)
 def buscar_cnpj(cnpj: str) -> Optional[str]:
@@ -1141,7 +700,7 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                 plano_nome = dados.get('plano_selecionado', '').split('\n')[0] if dados.get('plano_selecionado') else 'Não selecionado'
                 
                 st.markdown("### 📨 Email 1 - Para a Empresa")
-                st.markdown("**Para:** seguros@grupocp.com.br")
+                st.markdown("**Para:** informe@cpzseg.com.br")
                 st.markdown("**Assunto:** 🛡️ Nova Solicitação - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
                 st.markdown("**Tipo:** Notificação de nova adesão (dados completos)")
                 
@@ -1177,7 +736,7 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                 mensagens = []
                 
                 # 1. Enviar para empresa
-                email_destino = st.session_state.get('sendgrid_email_destino', 'seguros@grupocp.com.br')
+                email_destino = st.session_state.get('sendgrid_email_destino', 'informe@cpzseg.com.br')
                 sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino)
                 
                 if sucesso_empresa:
@@ -1247,10 +806,10 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                 <style>
                     body {{ font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }}
                     .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
+                    .header {{ background: #182c4b; color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }}
                     .content {{ background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px; }}
                     .section {{ margin-bottom: 25px; }}
-                    .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #667eea; padding-bottom: 5px; }}
+                    .section-title {{ color: #2d3748; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #182c4b; padding-bottom: 5px; }}
                     .info-row {{ display: flex; justify-content: space-between; margin-bottom: 8px; }}
                     .label {{ font-weight: bold; color: #4a5568; }}
                     .value {{ color: #2d3748; }}
@@ -1467,58 +1026,45 @@ def preparar_dados_formulario(session_state: Dict) -> Dict:
         'plano_selecionado': session_state.get('plano_radio', '')
     }
 
+def get_field_value(field_name: str) -> str:
+    """Obtém o valor de um campo priorizando dados atuais ou preservados"""
+    # Prioriza dados atuais do session_state (valores digitados)
+    current_value = st.session_state.get(field_name, '')
+    if current_value:
+        return current_value
+    # Se não há valor atual, usa dados preservados
+    return st.session_state.form_data.get(field_name, '')
+
 def main():
     """Função principal do aplicativo"""
     
     # Barra superior compacta com logo e títulos
     st.markdown("""
     <div class="header-bar" style="
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #182c4b;
         padding: 1.5rem;
-        margin: -1rem -1rem 2rem -1rem;
+        margin: -2rem -1rem 0.5rem -1rem;
         border-radius: 0 0 16px 16px;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        box-shadow: 0 4px 12px rgba(24, 44, 75, 0.2);
         text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
     ">
     """, unsafe_allow_html=True)
     
     # Inserir logo real usando a função existente
     try:
-        # Logo centralizado e menor
-        col1, col2, col3 = st.columns([1, 1, 1])
-        with col2:
-            st.markdown('<div style="display: flex; justify-content: center; margin-bottom: 1rem;">', unsafe_allow_html=True)
-            # Usar CSS para reduzir o tamanho do logo
-            st.markdown("""
-            <style>
-            .stImage > img {
-                width: 80px !important;
-                height: auto !important;
-                max-width: 80px !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            carregar_logo()
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Logo centralizado - abordagem simples e direta
+        carregar_logo(width=150)
         
-        # Textos centralizados
+        # Textos centralizados - removendo margem superior
         st.markdown("""
-        <div style="text-align: center; color: white;">
-            <h1 class="header-title" style="
-                color: white; 
-                font-weight: 700; 
-                font-size: 1.4rem; 
-                margin: 0 0 0.5rem 0;
-                line-height: 1.2;
-            ">Formulário de Adesão</h1>
-            <p class="header-subtitle" style="
-                color: rgba(255,255,255,0.9); 
-                font-size: 1.9rem; 
-                margin: 0;
-                font-weight: 500;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            ">Seguro Incêndio Conteúdos - Cessionários <span style="color: #000080; font-weight: 600;">ORLA RIO</span></p>
+        <div style="text-align: center; color: white; margin-top: -0.5rem; width: 100%;">
+            <h1 style="margin: 0; font-size: 1.25rem; font-weight: 700;">Formulário de Adesão</h1>
+            <p style="margin: 0; font-size: 1.25rem; opacity: 0.9;">Seguro Incêndio Conteúdos - Cessionários <span style="color: #182c4b;">ORLA RIO</span></p>
         </div>
         """, unsafe_allow_html=True)
         
@@ -1526,8 +1072,8 @@ def main():
         # Fallback se houver erro
         st.markdown("""
         <div style="text-align: center; color: white;">
-            <h1 style="margin: 0 0 0.5rem 0; font-size: 1.4rem; font-weight: 700;">Formulário de Adesão</h1>
-            <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">Seguro Incêndio Conteúdos - Cessionários <span style="color: #000080;">ORLA RIO</span></p>
+            <h1 style="margin: 0 0 0.25rem 0; font-size: 1.25rem; font-weight: 700;">Formulário de Adesão</h1>
+            <p style="margin: 0; font-size: 1rem; opacity: 0.9;">Seguro Incêndio Conteúdos - Cessionários <span style="color: #182c4b;">ORLA RIO</span></p>
         </div>
         """, unsafe_allow_html=True)
     
@@ -1544,6 +1090,20 @@ def main():
     if 'form_data' not in st.session_state:
         st.session_state.form_data = {}
     
+    # Verifica se há erros salvos para mostrar
+    if st.session_state.get('show_errors', False) and st.session_state.get('form_errors', []):
+        st.markdown('<div class="error-message">', unsafe_allow_html=True)
+        st.markdown("❌ **Erros encontrados no formulário anterior:**")
+        for erro in st.session_state.form_errors:
+            st.markdown(f"• {erro}")
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        st.info("💡 **Seus dados foram preservados!** Corrija os campos destacados abaixo e envie novamente.")
+        
+        # Limpa os erros após mostrar
+        del st.session_state.form_errors
+        del st.session_state.show_errors
+    
     # Criar opções formatadas para os planos (sempre)
     plano_opcoes_disponiveis = []
     for plano, preco in PLANOS_SEGURO.items():
@@ -1553,334 +1113,337 @@ def main():
     if 'plano_radio' not in st.session_state and plano_opcoes_disponiveis:
         st.session_state['plano_radio'] = plano_opcoes_disponiveis[0]
     
-    # Formulário principal
-    with st.form("formulario_seguro"):
-        
-        # Seção Identificação
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
-        
-        cpf = st.text_input(
-            "CPF *",
-            value=st.session_state.form_data.get('cpf', ''),
-            help="Digite o CPF no formato 000.000.000-00",
-            placeholder="000.000.000-00",
-            key="cpf"
+    # Formulário principal - SEM st.form() para evitar travamento
+    # Seção Identificação
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
+    
+    cpf = st.text_input(
+        "CPF *",
+        value=get_field_value('cpf'),
+        help="Digite o CPF no formato 000.000.000-00",
+        placeholder="000.000.000-00",
+        key="cpf"
+    )
+    
+    nome_completo = st.text_input(
+        "Nome Completo *",
+        max_chars=120,
+        value=get_field_value('nome_completo'),
+        help="Digite seu nome completo (máximo 120 caracteres)",
+        key="nome_completo"
+    )
+    
+    email = st.text_input(
+        "E-mail *",
+        value=get_field_value('email'),
+        help="Digite um e-mail válido",
+        key="email"
+    )
+    
+    telefone = st.text_input(
+        "Telefone *",
+        value=get_field_value('telefone'),
+        help="Digite o telefone (10 ou 11 dígitos)",
+        placeholder="(11) 99999-9999",
+        key="telefone"
+    )
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        cnpj = st.text_input(
+            "CNPJ *",
+            value=get_field_value('cnpj'),
+            help="Digite o CNPJ (14 dígitos)",
+            placeholder="00.000.000/0000-00",
+            key="cnpj"
         )
-        
-        nome_completo = st.text_input(
-            "Nome Completo *",
-            max_chars=120,
-            value=st.session_state.form_data.get('nome_completo', ''),
-            help="Digite seu nome completo (máximo 120 caracteres)",
-            key="nome_completo"
+    with col2:
+        # Adiciona espaço para alinhar com o campo de texto
+        st.markdown("<br>", unsafe_allow_html=True)
+        buscar_cnpj_btn = st.button("🔍 Buscar CNPJ", key="buscar_cnpj", use_container_width=True)
+    
+    # Campo para exibir razão social (somente leitura)
+    razao_social = st.text_input(
+        "Razão Social",
+        value=get_field_value('razao_social'),
+        help="Preenchido automaticamente após buscar CNPJ",
+        key="razao_social"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Seção Endereço
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📍 Endereço do Quiosque</div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        cep = st.text_input(
+            "CEP *",
+            value=get_field_value('cep'),
+            help="Digite o CEP no formato 00000-000 (busca automática opcional)",
+            placeholder="00000-000",
+            key="cep"
         )
-        
-        email = st.text_input(
-            "E-mail *",
-            value=st.session_state.form_data.get('email', ''),
-            help="Digite um e-mail válido",
-            key="email"
+    with col2:
+        # Adiciona espaço para alinhar com o campo de texto
+        st.markdown("<br>", unsafe_allow_html=True)
+        buscar_cep_btn = st.button("🔍 Buscar CEP", key="buscar_cep", use_container_width=True)
+    
+    logradouro = st.text_input(
+        "Logradouro *",
+        value=get_field_value('logradouro'),
+        help="Digite o endereço ou use a busca automática do CEP",
+        key="logradouro"
+    )
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        numero = st.text_input(
+            "Número *",
+            value=get_field_value('numero'),
+            help="Número do endereço",
+            key="numero"
         )
-        
-        telefone = st.text_input(
-            "Telefone *",
-            value=st.session_state.form_data.get('telefone', ''),
-            help="Digite o telefone (10 ou 11 dígitos)",
-            placeholder="(11) 99999-9999",
-            key="telefone"
+    with col2:
+        complemento = st.text_input(
+            "Complemento",
+            value=get_field_value('complemento'),
+            help="Apartamento, sala, etc. (opcional)",
+            key="complemento"
         )
-        
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            cnpj = st.text_input(
-                "CNPJ *",
-                value=st.session_state.form_data.get('cnpj', ''),
-                help="Digite o CNPJ (14 dígitos)",
-                placeholder="00.000.000/0000-00",
-                key="cnpj"
-            )
-        with col2:
-            buscar_cnpj_btn = st.form_submit_button("🔍 Buscar CNPJ")
-        
-        # Campo para exibir razão social (somente leitura)
-        razao_social = st.text_input(
-            "Razão Social",
-            value=st.session_state.form_data.get('razao_social', ''),
-            help="Preenchido automaticamente após buscar CNPJ",
-            key="razao_social"
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        bairro = st.text_input(
+            "Bairro *",
+            value=get_field_value('bairro'),
+            help="Digite o bairro ou use a busca automática do CEP",
+            key="bairro"
         )
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Seção Endereço
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">📍 Endereço do Quiosque</div>', unsafe_allow_html=True)
-        
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            cep = st.text_input(
-                "CEP *",
-                value=st.session_state.form_data.get('cep', ''),
-                help="Digite o CEP no formato 00000-000 (busca automática opcional)",
-                placeholder="00000-000",
-                key="cep"
-            )
-        with col2:
-            buscar_cep_btn = st.form_submit_button("🔍 Buscar CEP")
-        
-        logradouro = st.text_input(
-            "Logradouro *",
-            value=st.session_state.form_data.get('logradouro', ''),
-            help="Digite o endereço ou use a busca automática do CEP",
-            key="logradouro"
+    with col2:
+        cidade = st.text_input(
+            "Cidade *",
+            value=get_field_value('cidade'),
+            help="Digite a cidade ou use a busca automática do CEP",
+            key="cidade"
         )
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            numero = st.text_input(
-                "Número *",
-                value=st.session_state.form_data.get('numero', ''),
-                help="Número do endereço",
-                key="numero"
-            )
-        with col2:
-            complemento = st.text_input(
-                "Complemento",
-                value=st.session_state.form_data.get('complemento', ''),
-                help="Apartamento, sala, etc. (opcional)",
-                key="complemento"
-            )
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            bairro = st.text_input(
-                "Bairro *",
-                value=st.session_state.form_data.get('bairro', ''),
-                help="Digite o bairro ou use a busca automática do CEP",
-                key="bairro"
-            )
-        with col2:
-            cidade = st.text_input(
-                "Cidade *",
-                value=st.session_state.form_data.get('cidade', ''),
-                help="Digite a cidade ou use a busca automática do CEP",
-                key="cidade"
-            )
-        
-        estado = st.text_input(
-            "Estado *",
-            value=st.session_state.form_data.get('estado', ''),
-            help="Digite o estado (UF) ou use a busca automática do CEP",
-            key="estado"
-        )
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Seção Seguro
-        st.markdown('<div class="form-section">', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
-        
-        # Tabela de coberturas detalhadas
-        st.markdown("### 📋 Detalhamento das Coberturas")
-        st.markdown("""
-        <div style="overflow-x: auto; margin: 1.5rem 0;">
-            <table style="
-                width: 100%; 
-                min-width: 650px;
-                border-collapse: collapse; 
-                background: white; 
-                border-radius: 8px; 
-                overflow: hidden; 
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                table-layout: fixed;
-            ">
-                <thead>
-                    <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <th style="
-                            padding: 12px 8px; 
-                            text-align: left; 
-                            font-weight: 600; 
-                            width: 26%;
-                            white-space: nowrap;
-                            font-size: 0.9rem;
-                        ">Coberturas</th>
-                        <th style="
-                            padding: 12px 8px; 
-                            text-align: center; 
-                            font-weight: 600; 
-                            width: 18%;
-                            white-space: nowrap;
-                            font-size: 0.85rem;
-                        ">Opção 1<br><span style='font-size: 0.8rem;'>R$ 250.000</span></th>
-                        <th style="
-                            padding: 12px 8px; 
-                            text-align: center; 
-                            font-weight: 600; 
-                            width: 18%;
-                            white-space: nowrap;
-                            font-size: 0.85rem;
-                        ">Opção 2<br><span style='font-size: 0.8rem;'>R$ 400.000</span></th>
-                        <th style="
-                            padding: 12px 8px; 
-                            text-align: center; 
-                            font-weight: 600; 
-                            width: 18%;
-                            white-space: nowrap;
-                            font-size: 0.85rem;
-                        ">Opção 3<br><span style='font-size: 0.8rem;'>R$ 700.000</span></th>
-                        <th style="
-                            padding: 12px 8px; 
-                            text-align: center; 
-                            font-weight: 600; 
-                            width: 20%;
-                            white-space: nowrap;
-                            font-size: 0.85rem;
-                        ">Franquia</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="background: #f8f9fa;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Incêndio, Raio e Explosão</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 250.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 400.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 700.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(**) R$ 30.000</td>
-                    </tr>
-                    <tr style="background: white;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Alagamento</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 15.000</td>
-                    </tr>
-                    <tr style="background: #f8f9fa;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Danos Elétricos</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
-                    </tr>
-                    <tr style="background: white;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Pequenas Obras</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
-                    </tr>
-                    <tr style="background: #f8f9fa;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Perda/Pgto Aluguel (6 meses)</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 30.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 40.000</td>
-                        <td style="padding: 8px; text-align: center; color: #16a34a; font-size: 0.8rem;">Não Há</td>
-                    </tr>
-                    <tr style="background: white;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Vidros</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
-                    </tr>
-                    <tr style="background: #f8f9fa;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Tumultos</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
-                    </tr>
-                    <tr style="background: #f8f9fa;">
-                        <td style="
-                            padding: 8px; 
-                            font-weight: 500; 
-                            color: #2563eb;
-                            font-size: 0.85rem;
-                            white-space: nowrap;
-                        ">Vendaval</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
-                        <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
-                        <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 10.000</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Legenda das franquias
-        st.markdown("""
-        <div style="background: #f0f8ff; border-left: 4px solid #2563eb; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0;">
-            <p style="margin: 0; font-size: 0.875rem; color: #1e40af;">
-                <strong>📝 Legenda das Franquias:</strong><br>
-                (*) Franquia aplicável por sinistro<br>
-                (**) Franquia aplicável por sinistro para Incêndio, Raio e Explosão<br>
-                • Cobertura "Perda/Pgto Aluguel" não possui franquia
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Processamento dos botões de busca
-        if buscar_cnpj_btn and cnpj:
-            if validar_cnpj(cnpj):
-                razao_social_encontrada = buscar_cnpj(cnpj)
-                if razao_social_encontrada:
-                    st.session_state.form_data['razao_social'] = razao_social_encontrada
-                    st.rerun()
-            else:
-                st.error("❌ CNPJ deve estar no formato 00.000.000/0000-00 para busca automática")
-        
-        if buscar_cep_btn and cep:
-            if validar_cep(cep):
-                endereco = buscar_cep(cep)
-                if endereco:
-                    st.session_state.form_data.update(endereco)
-                    st.rerun()
-            else:
-                st.error("❌ CEP deve estar no formato 00000-000 para busca automática")
+    
+    estado = st.text_input(
+        "Estado *",
+        value=get_field_value('estado'),
+        help="Digite o estado (UF) ou use a busca automática do CEP",
+        key="estado"
+    )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Seção Seguro
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
+    
+    # Tabela de coberturas detalhadas
+    st.markdown("### 📋 Detalhamento das Coberturas")
+    st.markdown("""
+    <div style="overflow-x: auto; margin: 1.5rem 0;">
+        <table style="
+            width: 100%; 
+            min-width: 650px;
+            border-collapse: collapse; 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            table-layout: fixed;
+        ">
+            <thead>
+                <tr style="background: #182c4b; color: white;">
+                    <th style="
+                        padding: 12px 8px; 
+                        text-align: left; 
+                        font-weight: 600; 
+                        width: 26%;
+                        white-space: nowrap;
+                        font-size: 0.9rem;
+                    ">Coberturas</th>
+                    <th style="
+                        padding: 12px 8px; 
+                        text-align: center; 
+                        font-weight: 600; 
+                        width: 18%;
+                        white-space: nowrap;
+                        font-size: 0.85rem;
+                    ">Opção 1<br><span style='font-size: 0.8rem;'>R$ 250.000</span></th>
+                    <th style="
+                        padding: 12px 8px; 
+                        text-align: center; 
+                        font-weight: 600; 
+                        width: 18%;
+                        white-space: nowrap;
+                        font-size: 0.85rem;
+                    ">Opção 2<br><span style='font-size: 0.8rem;'>R$ 400.000</span></th>
+                    <th style="
+                        padding: 12px 8px; 
+                        text-align: center; 
+                        font-weight: 600; 
+                        width: 18%;
+                        white-space: nowrap;
+                        font-size: 0.85rem;
+                    ">Opção 3<br><span style='font-size: 0.8rem;'>R$ 700.000</span></th>
+                    <th style="
+                        padding: 12px 8px; 
+                        text-align: center; 
+                        font-weight: 600; 
+                        width: 20%;
+                        white-space: nowrap;
+                        font-size: 0.85rem;
+                    ">Franquia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="background: #f8f9fa;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Incêndio, Raio e Explosão</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 250.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 400.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 700.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(**) R$ 30.000</td>
+                </tr>
+                <tr style="background: white;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Alagamento</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 15.000</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Danos Elétricos</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
+                </tr>
+                <tr style="background: white;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Pequenas Obras</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Perda/Pgto Aluguel (6 meses)</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 30.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 40.000</td>
+                    <td style="padding: 8px; text-align: center; color: #16a34a; font-size: 0.8rem;">Não Há</td>
+                </tr>
+                <tr style="background: white;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Vidros</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 20.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 50.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 3.000</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Tumultos</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 5.000</td>
+                </tr>
+                <tr style="background: #f8f9fa;">
+                    <td style="
+                        padding: 8px; 
+                        font-weight: 500; 
+                        color: #2563eb;
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    ">Vendaval</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 100.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 150.000</td>
+                    <td style="padding: 8px; text-align: center; font-size: 0.8rem;">R$ 200.000</td>
+                    <td style="padding: 8px; text-align: center; color: #dc2626; font-size: 0.8rem;">(*) R$ 10.000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Legenda das franquias
+    st.markdown("""
+    <div style="background: #f0f8ff; border-left: 4px solid #2563eb; padding: 1rem; margin: 1rem 0; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; font-size: 0.875rem; color: #1e40af;">
+            <strong>📝 Legenda das Franquias:</strong><br>
+            (*) Franquia aplicável por sinistro<br>
+            (**) Franquia aplicável por sinistro para Incêndio, Raio e Explosão<br>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Processamento dos botões de busca (fora do form)
+    if buscar_cnpj_btn and cnpj:
+        if validar_cnpj(cnpj):
+            razao_social_encontrada = buscar_cnpj(cnpj)
+            if razao_social_encontrada:
+                # Salva em uma chave separada para evitar conflito
+                st.session_state.form_data['razao_social'] = razao_social_encontrada
+                st.rerun()
+        else:
+            st.error("❌ CNPJ deve estar no formato 00.000.000/0000-00 para busca automática")
+    
+    if buscar_cep_btn and cep:
+        if validar_cep(cep):
+            endereco = buscar_cep(cep)
+            if endereco:
+                # Salva em chaves separadas para evitar conflito
+                st.session_state.form_data.update(endereco)
+                st.rerun()
+        else:
+            st.error("❌ CEP deve estar no formato 00000-000 para busca automática")
 
     # ==================== SELEÇÃO DE PLANO E CÁLCULO DINÂMICO (FORA DO FORMULÁRIO) ====================
     
@@ -1982,106 +1545,97 @@ def main():
         erros = validar_formulario(dados)
         
         if erros:
+            # Salva dados no session state para preservar
+            st.session_state.form_data.update(dados)
+            
+            # Mostra erros de forma mais amigável
             st.markdown('<div class="error-message">', unsafe_allow_html=True)
-            st.markdown("❌ **Corrija os seguintes erros:**")
+            st.markdown("❌ **Por favor, corrija os seguintes campos:**")
             for erro in erros:
                 st.markdown(f"• {erro}")
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             
-            # Salva dados no session state para preservar
-            st.session_state.form_data = dados
+            # Adiciona uma mensagem explicativa
+            st.info("💡 **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente. Seus dados foram preservados!")
             
-            # Adiciona um botão para tentar novamente
-            if st.button("🔄 Tentar Novamente", key="retry_button", use_container_width=True):
-                # Limpa o estado de erro e permite nova tentativa
-                if 'form_error' in st.session_state:
-                    del st.session_state['form_error']
-                st.rerun()
+        else:
+            # Se chegou aqui, não há erros - limpa dados preservados e processa o envio
+            st.session_state.form_data = {}  # Limpa dados preservados
             
-            # Marca que houve erro para evitar loop
-            st.session_state['form_error'] = True
-            st.stop()
-        
-        # Se chegou aqui, não há erros - limpa flag de erro se existir
-        if 'form_error' in st.session_state:
-            del st.session_state['form_error']
-        
-        # Extrai o nome do plano
-        plano_nome = dados['plano_selecionado'].split('\n')[0]
-        
-        # Data de inclusão (hoje)
-        tz_sao_paulo = timezone(timedelta(hours=-3))
-        data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        # Calcula pró-rata
-        dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
-        
-        # Prepara dados para salvar
-        dados['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
-        dados['data_inclusao'] = data_inclusao.strftime('%Y-%m-%d')
-        dados['dias_restantes'] = dias_restantes
-        dados['premio_pro_rata'] = premio_pro_rata
-        
-        # Tenta enviar email
-        try:
-            email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
+            # Extrai o nome do plano
+            plano_nome = dados['plano_selecionado'].split('\n')[0]
             
-            if email_sucesso:
-                # Sucesso (pelo menos um funcionou)
-                st.markdown('<div class="success-message">', unsafe_allow_html=True)
-                mensagem_sucesso = f"✅ **Formulário enviado com sucesso!**<br>"
-                mensagem_sucesso += f"💰 **Prêmio pró-rata:** {formatar_valor_real(premio_pro_rata)} para {dias_restantes} dias<br>"
+            # Data de inclusão (hoje)
+            tz_sao_paulo = timezone(timedelta(hours=-3))
+            data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
+            
+            # Calcula pró-rata
+            dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
+            
+            # Prepara dados para salvar
+            dados['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
+            dados['data_inclusao'] = data_inclusao.strftime('%Y-%m-%d')
+            dados['dias_restantes'] = dias_restantes
+            dados['premio_pro_rata'] = premio_pro_rata
+            
+            # Tenta enviar email
+            try:
+                email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
                 
-                if email_mode == "Teste (sem envio)":
-                    mensagem_sucesso += "🧪 **Modo de teste ativo - dados processados localmente!**"
-                elif email_mode == "SendGrid":
-                    mensagem_sucesso += "📧 **Email enviado via SendGrid!**"
+                if email_sucesso:
+                    # Sucesso (pelo menos um funcionou)
+                    st.markdown('<div class="success-message">', unsafe_allow_html=True)
+                    mensagem_sucesso = f"✅ **Formulário enviado com sucesso!**<br>"
+                    mensagem_sucesso += f"💰 **Prêmio pró-rata:** {formatar_valor_real(premio_pro_rata)} para {dias_restantes} dias<br>"
+                    
+                    if email_mode == "Teste (sem envio)":
+                        mensagem_sucesso += "🧪 **Modo de teste ativo - dados processados localmente!**"
+                    elif email_mode == "SendGrid":
+                        mensagem_sucesso += "📧 **Email enviado via SendGrid!**"
+                    else:
+                        mensagem_sucesso += "📧 **Emails de confirmação enviados!**"
+                    
+                    st.markdown(mensagem_sucesso, unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Opções pós-envio
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        if st.button("📝 Novo Formulário", key="new_form_button", use_container_width=True):
+                            # Limpa todos os dados para novo formulário
+                            keys_to_clear = ['form_data', 'cpf', 'nome_completo', 'email', 'telefone', 
+                                           'cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 'complemento', 
+                                           'bairro', 'cidade', 'estado']
+                            for key in keys_to_clear:
+                                if key in st.session_state:
+                                    del st.session_state[key]
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("📋 Ver Resumo", key="show_summary_button", use_container_width=True):
+                            # Mostra resumo dos dados enviados
+                            with st.expander("📋 Resumo dos dados enviados", expanded=True):
+                                st.markdown(f"""
+                                **👤 Cliente:** {dados['nome_completo']}  
+                                **📧 Email:** {dados['email']}  
+                                **🏢 Empresa:** {dados['razao_social']}  
+                                **🛡️ Plano:** {plano_nome}  
+                                **💰 Prêmio:** {formatar_valor_real(premio_pro_rata)}  
+                                **📅 Vigência:** {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
+                                """)
+                    
                 else:
-                    mensagem_sucesso += "📧 **Emails de confirmação enviados!**"
-                
-                st.markdown(mensagem_sucesso, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Limpa session state dos campos do formulário, mas preserva plano padrão
-                keys_to_clear = ['form_data', 'form_error', 'cpf', 'nome_completo', 'email', 'telefone', 
-                               'cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 'complemento', 
-                               'bairro', 'cidade', 'estado']
-                for key in keys_to_clear:
-                    if key in st.session_state:
-                        del st.session_state[key]
-                
-                # Nota: plano_radio não pode ser modificado após widget ser criado
-                # O usuário pode selecionar manualmente o plano desejado para próximo formulário
-                
-                # Botão para novo formulário
-                if st.button("📝 Preencher Novo Formulário", key="new_form_button", use_container_width=True):
-                    st.rerun()
-                
-                st.stop()
-                
-            else:
-                # Falha total - preserva dados
-                st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                st.markdown("❌ **Erro ao processar formulário. Verifique as configurações e tente novamente.**")
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Salva dados no session state
-                st.session_state.form_data = dados
-                
-                # Botão para tentar novamente
-                if st.button("🔄 Tentar Novamente", key="retry_email_button", use_container_width=True):
-                    st.rerun()
-                
-        except Exception as e:
-            st.error(f"❌ Erro crítico no processamento: {str(e)}")
-            st.error(f"Tipo do erro: {type(e).__name__}")
-            
-            # Salva dados no session state
-            st.session_state.form_data = dados
-            
-            # Botão para tentar novamente
-            if st.button("🔄 Tentar Novamente", key="retry_exception_button", use_container_width=True):
-                st.rerun()
+                    # Falha no envio - preserva dados e permite nova tentativa
+                    st.markdown('<div class="error-message">', unsafe_allow_html=True)
+                    st.markdown("❌ **Erro ao enviar emails. Verifique as configurações e tente novamente.**")
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    st.info("💡 **Seus dados foram preservados.** Corrija as configurações de email e clique em 'Calcular e Enviar' novamente.")
+                    
+            except Exception as e:
+                st.error(f"❌ Erro crítico no processamento: {str(e)}")
+                st.info("💡 **Seus dados foram preservados.** Corrija o problema e tente novamente.")
 
 if __name__ == "__main__":
     main() 

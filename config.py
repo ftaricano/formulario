@@ -44,12 +44,12 @@ DATA_FINAL_VIGENCIA = datetime(2025, 12, 8)
 # ==================== CONFIGURAÇÕES DE EMAIL ====================
 
 EMAIL_CONFIG = {
-    "smtp_server": get_config_value("SMTP_SERVER", "smtp.office365.com"),
-    "smtp_port": int(get_config_value("SMTP_PORT", "587")),
-    "email_remetente": get_config_value("EMAIL_REMETENTE", ""),
-    "senha_email": get_config_value("EMAIL_SENHA", ""),
-    "email_empresa": get_config_value("EMAIL_EMPRESA", ""),
-    "modo_teste": get_config_value("MODO_TESTE", "true").lower() == "true"
+    "smtp_server": os.getenv("SMTP_SERVER", "smtp.office365.com"),
+    "smtp_port": int(os.getenv("SMTP_PORT", "587")),
+    "email_remetente": os.getenv("EMAIL_REMETENTE", ""),
+    "senha_email": os.getenv("EMAIL_SENHA", ""),
+    "email_empresa": os.getenv("EMAIL_EMPRESA", "informe@cpzseg.com.br"),
+    "modo_teste": os.getenv("MODO_TESTE", "true").lower() == "true"
 }
 
 # ==================== CONFIGURAÇÕES DE API ====================

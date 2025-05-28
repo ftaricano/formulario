@@ -1,0 +1,592 @@
+/* ==================== IMPORTAÇÕES E CONFIGURAÇÕES GERAIS ==================== */
+
+/* Importar fonte moderna do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ==================== CONFIGURAÇÃO GERAL DA PÁGINA ==================== */
+
+.stApp {
+    background: #b9bdbf;
+    min-height: 100vh;
+}
+
+/* Container principal */
+.main {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 1rem 0.5rem;
+}
+
+/* Card principal do formulário */
+.main > div {
+    background: #5d6872;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+/* ==================== TIPOGRAFIA ==================== */
+
+/* Título principal */
+h1 {
+    color: #182c4b !important;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+/* Garantir que todos os textos fiquem escuros */
+.stMarkdown, .stMarkdown p, .stMarkdown div {
+    color: #1a202c !important;
+}
+
+/* ==================== BOTÕES ==================== */
+
+/* Botões principais */
+.stButton > button {
+    background: #182c4b;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(24, 44, 75, 0.3);
+    width: 100%;
+    height: 3rem;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(24, 44, 75, 0.4);
+    background: #0f1f35;
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+}
+
+/* Botões de busca menores */
+.stButton > button[kind="secondary"] {
+    background: #182c4b;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    height: 2.5rem;
+    box-shadow: 0 2px 8px rgba(24, 44, 75, 0.3);
+}
+
+/* Alinhamento dos botões de busca com os campos */
+.stFormSubmitButton {
+    margin-top: 1.75rem;
+}
+
+.stFormSubmitButton > button {
+    background: #182c4b;
+    color: white !important;
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(24, 44, 75, 0.3);
+    width: 100%;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stFormSubmitButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(24, 44, 75, 0.4);
+    background: #0f1f35;
+}
+
+/* Botão principal do formulário */
+.stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]) {
+    background: #182c4b;
+    height: 3rem;
+    margin-top: 0;
+    box-shadow: 0 4px 15px rgba(24, 44, 75, 0.3);
+}
+
+.stFormSubmitButton > button[type="submit"]:not([aria-label*="Buscar"]):hover {
+    background: #0f1f35;
+    box-shadow: 0 8px 25px rgba(24, 44, 75, 0.4);
+}
+
+/* Texto dos botões de formulário */
+.stFormSubmitButton > button {
+    color: white !important;
+}
+
+/* ==================== CAMPOS DE INPUT ==================== */
+
+/* Campos de input */
+.stTextInput > div > div > input,
+.stSelectbox > div > div > select {
+    border: 2px solid #d1d5db;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #ffffff !important;
+    color: #1a202c !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.stTextInput > div > div > input:focus,
+.stSelectbox > div > div > select:focus {
+    border-color: #182c4b;
+    box-shadow: 0 0 0 3px rgba(24, 44, 75, 0.1);
+    outline: none;
+    background: #ffffff !important;
+}
+
+/* Estados específicos dos campos para garantir fundo branco */
+.stTextInput > div > div > input:hover,
+.stTextInput > div > div > input:active,
+.stTextInput > div > div > input:valid,
+.stTextInput > div > div > input:invalid,
+.stSelectbox > div > div > select:hover,
+.stSelectbox > div > div > select:active,
+.stSelectbox > div > div > select:valid,
+.stSelectbox > div > div > select:invalid {
+    background: #ffffff !important;
+    color: #1a202c !important;
+}
+
+/* Autocomplete e preenchimento automático */
+.stTextInput > div > div > input:-webkit-autofill,
+.stTextInput > div > div > input:-webkit-autofill:hover,
+.stTextInput > div > div > input:-webkit-autofill:focus,
+.stTextInput > div > div > input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+    -webkit-text-fill-color: #1a202c !important;
+    background: #ffffff !important;
+}
+
+/* Labels dos campos */
+.stTextInput > label,
+.stSelectbox > label {
+    color: #182c4b !important;
+    font-weight: 700;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Campos desabilitados */
+.stTextInput > div > div > input:disabled {
+    background: #e5e7eb;
+    color: #1a202c;
+    border-color: #d1d5db;
+}
+
+/* Placeholder text */
+.stTextInput > div > div > input::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Selectbox styling */
+.stSelectbox > div > div {
+    background: #ffffff !important;
+    border-radius: 12px;
+}
+
+/* Garantir que o selectbox interno também seja branco */
+.stSelectbox > div > div > select,
+.stSelectbox > div > div > div {
+    background: #ffffff !important;
+    color: #1a202c !important;
+}
+
+/* Help text */
+.stTextInput > div > div > div,
+.stSelectbox > div > div > div {
+    color: #6b7280;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* ==================== LOGO E HEADER ==================== */
+
+/* Logo container */
+.stImage {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
+/* Garantir que a imagem do logo não tenha margens */
+.stImage > div {
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+}
+
+.stImage img {
+    margin: 0 auto !important;
+    padding: 0 !important;
+    display: block !important;
+}
+
+/* Centralização específica para a barra superior */
+.header-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.header-bar .stImage {
+    width: 100% !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+.header-bar .stImage > div {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+}
+
+/* Forçar centralização em todos os containers do Streamlit */
+div[data-testid="stImage"] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+div[data-testid="stImage"] > div {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+/* Garantir que o container principal da barra seja centralizado */
+.header-bar > div {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* CSS super específico para forçar centralização do logo */
+.header-bar [data-testid="stImage"],
+.header-bar .stImage,
+.header-bar div[data-testid="stImage"] {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+.header-bar [data-testid="stImage"] > div,
+.header-bar .stImage > div,
+.header-bar div[data-testid="stImage"] > div {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+.header-bar img {
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+/* Remover qualquer float ou position que possa afetar */
+.header-bar * {
+    float: none !important;
+    position: static !important;
+}
+
+/* ==================== SEÇÕES DO FORMULÁRIO ==================== */
+
+/* Seções do formulário */
+.form-section {
+    background: #182c4b;
+    border: 1px solid #0f1f35;
+    border-left: 4px solid #b9bdbf;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    box-shadow: 0 2px 8px rgba(24, 44, 75, 0.2);
+    position: relative;
+}
+
+.section-title {
+    color: #182c4b !important;
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Textos dentro das seções do formulário ficam brancos */
+.form-section .stMarkdown,
+.form-section .stMarkdown p,
+.form-section .stMarkdown div,
+.form-section .stRadio > label {
+    color: #ffffff !important;
+}
+
+/* Labels dos campos ficam em azul escuro */
+.form-section .stTextInput > label,
+.form-section .stSelectbox > label {
+    color: #182c4b !important;
+    font-weight: 700;
+}
+
+/* Títulos das seções ficam em azul escuro */
+.form-section .section-title {
+    color: #182c4b !important;
+}
+
+/* ==================== MENSAGENS ==================== */
+
+/* Mensagens de sucesso */
+.success-message {
+    background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+    color: #22543d;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #9ae6b4;
+    margin: 1.5rem 0;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+}
+
+/* Mensagens de erro */
+.error-message {
+    background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+    color: #742a2a;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #feb2b2;
+    margin: 1.5rem 0;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(245, 101, 101, 0.15);
+}
+
+/* Avisos */
+.stAlert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* ==================== RADIO BUTTONS (PLANOS) ==================== */
+
+/* Estilização dos Radio Buttons para Planos */
+.stRadio > div {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.stRadio > div > label {
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1;
+    min-width: 150px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+}
+
+.stRadio > div > label:hover {
+    border-color: #182c4b;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(24, 44, 75, 0.15);
+}
+
+/* Estilo quando selecionado */
+.stRadio > div > label:has(input:checked) {
+    background: #182c4b;
+    border-color: #182c4b;
+    color: white;
+    box-shadow: 0 8px 25px rgba(24, 44, 75, 0.3);
+}
+
+.stRadio > div > label:has(input:checked) > div {
+    color: white !important;
+}
+
+/* Esconder o radio button padrão */
+.stRadio input[type="radio"] {
+    display: none;
+}
+
+/* Estilizar o texto dos radio buttons */
+.stRadio > div > label > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #1a202c;
+    font-weight: 600;
+    white-space: pre-line;
+    line-height: 1.4;
+}
+
+.stRadio > div > label:has(input:checked) > div {
+    color: white !important;
+}
+
+/* ==================== LAYOUT E ESTRUTURA ==================== */
+
+/* Divisores */
+hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+    margin: 1.5rem 0;
+}
+
+/* Colunas */
+.row-widget.stHorizontal {
+    gap: 1rem;
+}
+
+/* Divisor mais sutil entre seções */
+.stMarkdown hr {
+    border: none;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 2rem 0;
+}
+
+/* Separadores entre módulos do formulário */
+.stForm > div > div {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stForm > div > div:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+/* ==================== SCROLLBAR PERSONALIZADA ==================== */
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #182c4b;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0f1f35;
+}
+
+/* ==================== RESPONSIVIDADE ==================== */
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .main {
+        padding: 1rem 0.5rem;
+        max-width: 100%;
+    }
+    
+    .main > div {
+        padding: 1.5rem;
+        border-radius: 16px;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    /* Barra superior responsiva */
+    .header-bar {
+        padding: 1rem !important;
+    }
+    
+    .header-content {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 1rem !important;
+    }
+    
+    .header-title {
+        font-size: 1.2rem !important;
+        text-align: center !important;
+    }
+    
+    .header-subtitle {
+        font-size: 0.8rem !important;
+        text-align: center !important;
+    }
+    
+    /* Logo na barra superior em mobile */
+    .stImage {
+        display: flex !important;
+        justify-content: center !important;
+    }
+    
+    /* Responsividade para radio buttons */
+    .stRadio > div {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .stRadio > div > label {
+        min-width: unset;
+        padding: 1rem;
+    }
+}
+
+/* ==================== ANIMAÇÕES ==================== */
+
+/* Animações suaves */
+* {
+    transition: all 0.2s ease;
+} 
