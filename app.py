@@ -1153,6 +1153,12 @@ def main():
         key="telefone"
     )
     
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Seção Endereço
+    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
+    
     col1, col2 = st.columns([3, 1])
     with col1:
         cnpj = st.text_input(
@@ -1174,12 +1180,6 @@ def main():
         help="Preenchido automaticamente após buscar CNPJ",
         key="razao_social"
     )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Seção Endereço
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns([3, 1])
     with col1:
