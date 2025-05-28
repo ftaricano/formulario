@@ -516,10 +516,13 @@ def configurar_sendgrid_streamlit():
                     sender = SendGridEmailSender(api_key_from_secrets)
                     return sender, True, email_mode
                 except Exception as e:
-                    st.error(f"❌ Erro na configuração do SendGrid: {str(e)}")
+                    st.warning(f"⚠️ Problema na configuração do SendGrid: {str(e)}")
+                    st.info("🧪 Usando modo de teste temporário")
                     return None, False, "Teste (sem envio)"
-    except Exception:
-        pass  # Ignora erros de secrets
+    except Exception as e:
+        st.warning(f"⚠️ Erro ao carregar configurações: {str(e)}")
+        st.info("🧪 Usando modo de teste temporário")
+        return None, False, "Teste (sem envio)"
     
     # Tentar variáveis de ambiente como fallback
     api_key_env = os.getenv('SENDGRID_API_KEY')
@@ -528,11 +531,12 @@ def configurar_sendgrid_streamlit():
             sender = SendGridEmailSender(api_key_env)
             return sender, True, email_mode
         except Exception as e:
-            st.error(f"❌ Erro na configuração do SendGrid via env: {str(e)}")
+            st.warning(f"⚠️ Erro na configuração do SendGrid via env: {str(e)}")
+            st.info("🧪 Usando modo de teste temporário")
             return None, False, "Teste (sem envio)"
     
-    # Se chegou aqui, não há configuração válida
-    st.error("❌ Configuração de email não encontrada! Configure o SendGrid no secrets.toml ou variáveis de ambiente.")
+    # Se chegou aqui, não há configuração válida - usar modo de teste
+    st.info("🧪 **Modo de teste ativo** - Configure o SendGrid para envio real de emails")
     st.info("📋 Para configurar, adicione no arquivo `.streamlit/secrets.toml`:")
     st.code("""
 [sendgrid]
