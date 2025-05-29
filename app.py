@@ -11,6 +11,7 @@ import os
 from functools import lru_cache
 import base64
 import time
+import socket
 
 # Importações do SendGrid
 try:
@@ -25,6 +26,45 @@ from config import (
     PLANOS_SEGURO, DATA_FINAL_VIGENCIA, EMAIL_CONFIG, API_URLS, 
     TIMEOUT_CONFIG, REGEX_PATTERNS, APP_CONFIG, MENSAGENS, CAMPOS_OBRIGATORIOS
 )
+
+# ==================== FUNÇÃO PARA MOSTRAR URLs ====================
+
+def get_local_ip():
+    """Obtém o IP local da máquina"""
+    try:
+        # Conecta a um endereço externo para descobrir o IP local
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "localhost"
+
+def mostrar_urls_acesso():
+    """Mostra as URLs de acesso no console quando o servidor iniciar"""
+    local_ip = get_local_ip()
+    porta = 8501  # Porta padrão do Streamlit
+    
+    print("\n" + "="*60)
+    print("🌐 SERVIDOR STREAMLIT INICIADO COM SUCESSO!")
+    print("="*60)
+    print(f"📍 URL Local:     http://localhost:{porta}")
+    print(f"📍 URL Local Alt: http://127.0.0.1:{porta}")
+    print(f"🌐 URL da Rede:   http://{local_ip}:{porta}")
+    print("="*60)
+    print("📱 Para acessar pelo celular:")
+    print(f"   Use: http://{local_ip}:{porta}")
+    print("   (Certifique-se de estar na mesma rede WiFi)")
+    print("="*60)
+    print("🔧 Comandos úteis:")
+    print("   Ctrl+C para parar o servidor")
+    print("   Consulte ACESSO_URLS.md para mais informações")
+    print("="*60 + "\n")
+
+# Mostrar URLs quando o app iniciar
+if __name__ == "__main__" or "streamlit" in str(os.environ.get("_", "")):
+    mostrar_urls_acesso()
 
 # Configuração da página
 st.set_page_config(
@@ -239,7 +279,7 @@ class SendGridEmailSender:
         """
         try:
             # Email remetente - tentar carregar do secrets.toml primeiro
-            remetente_email = "seu_email_verificado@gmail.com"  # padrão
+            remetente_email = "noreply@cpzseg.com.br"  # padrão
             remetente_nome = "Grupo CPZ - Formulários"
             
             try:
@@ -1136,13 +1176,6 @@ def render_coberturas_table():
     """Renderiza tabela de coberturas de forma responsiva"""
     st.markdown("### 📋 Detalhamento das Coberturas")
     
-    # Alternar entre tabela e cards baseado no dispositivo
-    st.markdown("""
-    <div class="coverage-info">
-        <p>💡 <strong>Navegação:</strong> No desktop, veja a tabela completa. No mobile, navegue pelos cards abaixo.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
     # Versão desktop (tabela)
     st.markdown("""
     <div class="coverage-table-desktop">
@@ -1304,15 +1337,6 @@ def render_coberturas_table():
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Legenda
-    st.markdown("""
-    <div class="coverage-legend">
-        <p><strong>📝 Sobre as Franquias:</strong></p>
-        <p>Franquia é o valor que fica por sua conta em caso de sinistro.</p>
-        <p>Valores aplicáveis por sinistro individual.</p>
-    </div>
-    """, unsafe_allow_html=True)
 
 def render_responsive_field(label, field_name, field_type="text", help_text="", placeholder="", search_button=False, col_ratio=None):
     """Renderiza campos de forma responsiva baseado no tamanho da tela"""
@@ -1431,17 +1455,14 @@ def main():
     st.markdown('<div class="form-section">', unsafe_allow_html=True)
     st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        cnpj = st.text_input(
-            "CNPJ *",
-            value=get_field_value('cnpj'),
-            help="Digite o CNPJ (14 dígitos)",
-            placeholder="00.000.000/0000-00",
-            key="cnpj"
-        )
-    with col2:
-        buscar_cnpj_btn = st.button("🔍 Buscar CNPJ", key="buscar_cnpj", use_container_width=True)
+    # Campo CNPJ com botão de busca usando função responsiva
+    cnpj, buscar_cnpj_btn = render_responsive_field(
+        label="CNPJ *",
+        field_name="cnpj",
+        help_text="Digite o CNPJ (14 dígitos)",
+        placeholder="00.000.000/0000-00",
+        search_button=True
+    )
     
     # Campo para exibir razão social (somente leitura)
     razao_social = st.text_input(
@@ -1451,17 +1472,14 @@ def main():
         key="razao_social"
     )
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        cep = st.text_input(
-            "CEP *",
-            value=get_field_value('cep'),
-            help="Digite o CEP no formato 00000-000 (busca automática opcional)",
-            placeholder="00000-000",
-            key="cep"
-        )
-    with col2:
-        buscar_cep_btn = st.button("🔍 Buscar CEP", key="buscar_cep", use_container_width=True)
+    # Campo CEP com botão de busca usando função responsiva
+    cep, buscar_cep_btn = render_responsive_field(
+        label="CEP *",
+        field_name="cep",
+        help_text="Digite o CEP no formato 00000-000 (busca automática opcional)",
+        placeholder="00000-000",
+        search_button=True
+    )
     
     logradouro = st.text_input(
         "Logradouro *",
@@ -1640,19 +1658,19 @@ def main():
         <div style="
             background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
             border: 2px solid #48bb78;
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 8px;
+            padding: 1rem;
             text-align: center;
             margin: 1rem 0;
-            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
+            box-shadow: 0 2px 8px rgba(72, 187, 120, 0.2);
         ">
-            <h3 style="color: #22543d; margin: 0 0 0.5rem 0; font-size: 1.25rem;">
+            <h3 style="color: #22543d; margin: 0 0 0.5rem 0; font-size: 1.1rem;">
                 🎯 Valor Final do Prêmio
             </h3>
-            <div style="color: #22543d; font-size: 2rem; font-weight: bold; margin: 0;">
+            <div style="color: #22543d; font-size: 1.5rem; font-weight: bold; margin: 0;">
                 {formatar_valor_real(premio_pro_rata)}
             </div>
-            <div style="color: #2f855a; font-size: 0.875rem; margin-top: 0.5rem;">
+            <div style="color: #2f855a; font-size: 0.8rem; margin-top: 0.5rem;">
                 Válido de {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
             </div>
         </div>
@@ -1662,40 +1680,6 @@ def main():
     
     # ==================== BOTÃO DE ENVIO FINAL ====================
     
-    # Seção de ajuda simplificada
-    with st.expander("❓ Precisa de Ajuda?", expanded=False):
-        st.markdown("""
-        **💡 Dicas para preenchimento:**
-        
-        • **Autocomplete:** Se o navegador preencheu automaticamente alguns campos, 
-          verifique se todos os dados estão corretos antes de enviar.
-        
-        • **Campos obrigatórios:** Todos os campos marcados com * são obrigatórios.
-        
-        • **Busca automática:** Use os botões 🔍 para preencher dados automaticamente.
-        
-        • **Mobile:** Em dispositivos móveis, role para ver todos os campos.
-        """)
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🔄 Limpar Formulário", help="Remove todos os dados preenchidos"):
-                # Limpar session state
-                keys_to_clear = ['form_data', 'cpf', 'nome_completo', 'email', 'telefone', 
-                               'cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 'complemento', 
-                               'bairro', 'cidade', 'estado']
-                for key in keys_to_clear:
-                    if key in st.session_state:
-                        del st.session_state[key]
-                st.rerun()
-        
-        with col2:
-            st.markdown("""
-            <div style="padding: 0.5rem; background: #f0f8ff; border-radius: 8px; text-align: center;">
-                <small>🆘 <strong>Problemas?</strong><br>Entre em contato conosco</small>
-            </div>
-            """, unsafe_allow_html=True)
-
     # Botão de envio FORA do formulário - ÚLTIMA COISA
     st.markdown("---")
     enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
