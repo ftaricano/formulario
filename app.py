@@ -534,6 +534,108 @@ def render_responsive_field(label, field_name, field_type="text", help_text="", 
             key=field_name
         )
 
+def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem envio)"):
+    """Exibe popup de sucesso após envio do formulário"""
+    
+    # Mensagem principal baseada no modo
+    if email_mode == "Teste (sem envio)":
+        mensagem_principal = "🧪 **Formulário processado com sucesso!**"
+        mensagem_detalhes = "Modo de teste ativo - Configure o SendGrid para envio real"
+        icone = "🧪"
+    else:
+        mensagem_principal = "✅ **Solicitação recebida com sucesso!**"
+        mensagem_detalhes = "Nossa equipe entrará em contato em até 24 horas"
+        icone = "✅"
+    
+    # ID único para o popup
+    popup_id = f"popup_{datetime.now().timestamp()}"
+    
+    # Extrair primeiro nome
+    primeiro_nome = nome_cliente.split()[0] if nome_cliente and ' ' in nome_cliente else nome_cliente
+    
+    popup_html = f"""
+    <div class="popup-overlay" id="{popup_id}" onclick="closePopup('{popup_id}')">
+        <div class="popup-container" onclick="event.stopPropagation()">
+            <div class="popup-header">
+                <button class="popup-close" onclick="closePopup('{popup_id}')">×</button>
+                <div class="popup-icon">{icone}</div>
+                <h2>Obrigado, {primeiro_nome}!</h2>
+            </div>
+            
+            <div class="popup-content">
+                <p><strong>{mensagem_principal}</strong></p>
+                <p>📧 Seus dados foram enviados para nossa equipe</p>
+                <p>💰 <span class="highlight">Prêmio calculado: {formatar_valor_real(premio_calculado)}</span></p>
+                <p>🕐 {mensagem_detalhes}</p>
+            </div>
+            
+            <div class="popup-footer">
+                <button class="popup-button secondary" onclick="novoFormulario()">
+                    📝 Novo Formulário
+                </button>
+                <button class="popup-button" onclick="closePopup('{popup_id}')">
+                    👍 Entendi
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Aguardar DOM carregar
+        document.addEventListener('DOMContentLoaded', function() {{
+            setupPopup('{popup_id}');
+        }});
+        
+        // Se DOM já estiver carregado
+        if (document.readyState === 'loading') {{
+            document.addEventListener('DOMContentLoaded', function() {{
+                setupPopup('{popup_id}');
+            }});
+        }} else {{
+            setupPopup('{popup_id}');
+        }}
+        
+        function setupPopup(popupId) {{
+            // Auto-fechar após 12 segundos
+            setTimeout(() => {{
+                closePopup(popupId);
+            }}, 12000);
+            
+            // Fechar com ESC
+            document.addEventListener('keydown', function(event) {{
+                if (event.key === 'Escape') {{
+                    closePopup(popupId);
+                }}
+            }});
+        }}
+        
+        function closePopup(popupId) {{
+            const popup = document.getElementById(popupId);
+            if (popup) {{
+                popup.style.opacity = '0';
+                popup.style.transform = 'scale(0.8)';
+                setTimeout(() => {{
+                    popup.remove();
+                }}, 300);
+            }}
+        }}
+        
+        function novoFormulario() {{
+            // Tentar usar o Streamlit para recarregar
+            if (window.parent && window.parent.postMessage) {{
+                window.parent.postMessage({{
+                    type: 'streamlit:rerun'
+                }}, '*');
+            }} else {{
+                // Fallback para recarregar a página
+                window.location.reload();
+            }}
+        }}
+    </script>
+    """
+    
+    st.markdown(popup_html, unsafe_allow_html=True)
+
 def main():
     render_header()
     
@@ -737,43 +839,7 @@ def main():
                 email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
                 
                 if email_sucesso:
-                    st.markdown('<div class="success-message">', unsafe_allow_html=True)
-                    mensagem_sucesso = f"✅ **Mensagem transmitida com sucesso!**<br>"
-                    mensagem_sucesso += f"📧 **Seus dados foram enviados para nossa equipe.**<br>"
-                    mensagem_sucesso += f"💰 **Prêmio calculado:** {formatar_valor_real(premio_pro_rata)}<br>"
-                    mensagem_sucesso += f"🕐 **Em breve você receberá retorno.**<br>"
-                    
-                    if email_mode == "Teste (sem envio)":
-                        mensagem_sucesso += "🧪 **Modo de teste ativo!**"
-                    else:
-                        mensagem_sucesso += "📨 **Nossa equipe entrará em contato em até 24 horas.**"
-                    
-                    st.markdown(mensagem_sucesso, unsafe_allow_html=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        if st.button("📝 Novo Formulário", key="new_form_button", use_container_width=True):
-                            keys_to_clear = ['form_data', 'cpf', 'nome_completo', 'email', 'telefone', 
-                                           'cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 'complemento', 
-                                           'bairro', 'cidade', 'estado']
-                            for key in keys_to_clear:
-                                if key in st.session_state:
-                                    del st.session_state[key]
-                            st.rerun()
-                    
-                    with col2:
-                        if st.button("📋 Ver Resumo", key="show_summary_button", use_container_width=True):
-                            with st.expander("📋 Resumo dos dados enviados", expanded=True):
-                                st.markdown(f"""
-                                **👤 Cliente:** {dados['nome_completo']}  
-                                **📧 Email:** {dados['email']}  
-                                **🏢 Empresa:** {dados['razao_social']}  
-                                **🛡️ Plano:** {plano_nome}  
-                                **💰 Prêmio:** {formatar_valor_real(premio_pro_rata)}  
-                                **📅 Vigência:** {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
-                                """)
+                    exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode)
                     
                 else:
                     st.markdown('<div class="error-message">', unsafe_allow_html=True)
