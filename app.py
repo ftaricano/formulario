@@ -414,7 +414,7 @@ def render_header():
     """, unsafe_allow_html=True)
     
     try:
-        carregar_logo(width=100)
+        carregar_logo(width=200)
     except Exception:
         st.markdown("**🛡️ Formulário de Adesão**")
     
