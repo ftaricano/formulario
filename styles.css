@@ -1096,4 +1096,77 @@ div[data-testid="column"] button {
     border-radius: 50% !important;
     padding: 0 !important;
     font-size: 18px !important;
+}
+
+/* ==================== OCULTAR RODAPÉ DO STREAMLIT ==================== */
+
+/* Ocultar rodapé principal do Streamlit */
+footer {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar container do rodapé */
+.stApp > footer {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar informações do usuário logado */
+div[data-testid="stSidebarUserInfo"],
+div[data-testid="stHeaderActionElements"],
+.stDeployButton,
+div[data-testid="stDecoration"] {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar menu hambúrguer se necessário */
+button[title="App menu"] {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar qualquer elemento que contenha "Made with Streamlit" */
+div:has-text("Made with Streamlit"),
+div[aria-label*="Made with"],
+div[title*="Made with"] {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar elementos específicos do footer */
+div[data-testid="stBottom"],
+div[data-testid="stFooter"],
+.streamlit-footer {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Ocultar avatar e informações do usuário */
+div[data-testid="stSidebarUserInfo"] img,
+div[data-testid="stSidebarUserInfo"] div,
+.user-info,
+.user-avatar {
+    visibility: hidden !important;
+    display: none !important;
+}
+
+/* Garantir que o conteúdo principal ocupe todo o espaço */
+.main .block-container {
+    padding-bottom: var(--spacing-md) !important;
+}
+
+/* Remover espaço extra que pode sobrar do footer */
+.stApp {
+    padding-bottom: 0 !important;
+}
+
+/* Ocultar elementos relacionados ao GitHub/Deploy */
+div[data-testid="stToolbar"],
+.stActionButton,
+div[aria-label*="GitHub"],
+div[aria-label*="Deploy"] {
+    visibility: hidden !important;
+    display: none !important;
 } 
