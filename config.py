@@ -44,25 +44,24 @@ DATA_FINAL_VIGENCIA = datetime(2025, 12, 8)
 # ==================== CONFIGURAÇÕES DE EMAIL ====================
 
 EMAIL_CONFIG = {
-    "smtp_server": os.getenv("SMTP_SERVER", "smtp.office365.com"),
-    "smtp_port": int(os.getenv("SMTP_PORT", "587")),
+    "smtp_server": "smtp.office365.com",
+    "smtp_port": 587,
     "email_remetente": os.getenv("EMAIL_REMETENTE", ""),
     "senha_email": os.getenv("EMAIL_SENHA", ""),
-    "email_empresa": os.getenv("EMAIL_EMPRESA", "informe@cpzseg.com.br"),
-    "modo_teste": os.getenv("MODO_TESTE", "true").lower() == "true"
+    "email_empresa": "informe@cpzseg.com.br",
+    "modo_teste": True
 }
 
 # ==================== CONFIGURAÇÕES DE API ====================
 
 API_URLS = {
     "receita_ws": "https://www.receitaws.com.br/v1/cnpj/",
-    "via_cep": "https://viacep.com.br/ws/",
-    "cpf_ws": "https://api.cpfcnpj.com.br/"  # API para consulta de CPF
+    "via_cep": "https://viacep.com.br/ws/"
 }
 
 TIMEOUT_CONFIG = {
-    "api_timeout": int(get_config_value("API_TIMEOUT", "5")),
-    "max_retries": int(get_config_value("MAX_RETRIES", "3"))
+    "api_timeout": 5,
+    "max_retries": 3
 }
 
 # ==================== REGEX PATTERNS ====================
@@ -71,8 +70,8 @@ REGEX_PATTERNS = {
     "email": r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     "cnpj": r'^\d{14}$',
     "cep": r'^\d{8}$',
-    "cpf": r'^\d{11}$',  # CPF deve ter 11 dígitos
-    "telefone": r'^\d{10,11}$'  # Telefone deve ter 10 ou 11 dígitos
+    "cpf": r'^\d{11}$',
+    "telefone": r'^\d{10,11}$'
 }
 
 # ==================== CONFIGURAÇÕES DA APLICAÇÃO ====================
@@ -81,26 +80,19 @@ APP_CONFIG = {
     "page_title": "Adesão do Seguro Incêndio Orla Rio",
     "page_icon": "🛡️",
     "layout": "centered",
-    "logo_path": "logo.png",
-    "logo_width": 200
+    "logo_path": "logo.png"
 }
 
 # ==================== MENSAGENS ====================
 
 MENSAGENS = {
-    "logo_nao_encontrado": "⚠️ Logo não encontrado. Coloque o arquivo 'logo.png' na raiz do projeto.",
+    "logo_nao_encontrado": "⚠️ Logo não encontrado.",
     "cnpj_invalido": "❌ CNPJ inválido",
     "cpf_invalido": "❌ CPF inválido",
     "cep_invalido": "❌ CEP inválido",
-    "telefone_invalido": "❌ Telefone inválido",
     "timeout_cnpj": "⏱️ Timeout na consulta do CNPJ. Tente novamente.",
-    "timeout_cpf": "⏱️ Timeout na consulta do CPF. Tente novamente.",
     "timeout_cep": "⏱️ Timeout na consulta do CEP. Tente novamente.",
-    "cep_nao_encontrado": "❌ CEP não encontrado.",
-    "cpf_nao_encontrado": "❌ CPF não encontrado ou inválido.",
-    "email_config_erro": "⚠️ Configurações de email não encontradas. Email não será enviado.",
-    "sucesso_email": "📧 Emails de confirmação enviados com sucesso!",
-    "erro_formulario": "❌ **Erro ao processar formulário. Verifique as configurações e tente novamente.**"
+    "cep_nao_encontrado": "❌ CEP não encontrado."
 }
 
 # ==================== VALIDAÇÕES ====================
