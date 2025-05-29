@@ -1100,6 +1100,21 @@ div[data-testid="column"] button {
 
 /* ==================== OCULTAR RODAPÉ DO STREAMLIT ==================== */
 
+/* ==================== OCULTAR CABEÇALHO COMPLETO DO STREAMLIT ==================== */
+
+/* Cabeçalho inteiro (barra superior) - ocultar e remover altura */
+div[data-testid="stHeader"] {
+    visibility: hidden !important;
+    height: 0 !important;
+    display: none !important;
+}
+
+/* Bloco que contém avatar, "Manage app", etc. - forçar ocultação */
+div[data-testid="stHeaderActionElements"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 /* Ocultar rodapé principal do Streamlit */
 footer {
     visibility: hidden !important;

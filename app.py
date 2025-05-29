@@ -88,6 +88,38 @@ def load_css():
 # Carregar CSS
 load_css()
 
+# Função para ocultar cabeçalho do Streamlit
+def ocultar_cabecalho_streamlit():
+    """Aplica CSS inline para garantir que o cabeçalho do Streamlit seja ocultado"""
+    st.markdown("""
+    <style>
+    /* Cabeçalho inteiro (barra superior) - ocultar e remover altura */
+    div[data-testid="stHeader"] {
+        visibility: hidden !important;
+        height: 0 !important;
+        display: none !important;
+    }
+    
+    /* Bloco que contém avatar, "Manage app", etc. - forçar ocultação */
+    div[data-testid="stHeaderActionElements"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* Garantir que não apareça nenhum elemento do cabeçalho */
+    .stDeployButton,
+    div[data-testid="stDecoration"],
+    div[data-testid="stToolbar"],
+    div[data-testid="stSidebarUserInfo"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Aplicar ocultação do cabeçalho
+ocultar_cabecalho_streamlit()
+
 # JavaScript otimizado e limpo para mobile
 st.markdown("""
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
