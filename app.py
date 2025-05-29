@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import requests
 from datetime import datetime, timezone, timedelta
 import re
@@ -537,104 +538,35 @@ def render_responsive_field(label, field_name, field_type="text", help_text="", 
 def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem envio)"):
     """Exibe popup de sucesso após envio do formulário"""
     
-    # Mensagem principal baseada no modo
-    if email_mode == "Teste (sem envio)":
-        mensagem_principal = "🧪 **Formulário processado com sucesso!**"
-        mensagem_detalhes = "Modo de teste ativo - Configure o SendGrid para envio real"
-        icone = "🧪"
-    else:
-        mensagem_principal = "✅ **Solicitação recebida com sucesso!**"
-        mensagem_detalhes = "Nossa equipe entrará em contato em até 24 horas"
-        icone = "✅"
-    
-    # ID único para o popup
-    popup_id = f"popup_{datetime.now().timestamp()}"
-    
     # Extrair primeiro nome
     primeiro_nome = nome_cliente.split()[0] if nome_cliente and ' ' in nome_cliente else nome_cliente
     
-    popup_html = f"""
-    <div class="popup-overlay" id="{popup_id}" onclick="closePopup('{popup_id}')">
-        <div class="popup-container" onclick="event.stopPropagation()">
-            <div class="popup-header">
-                <button class="popup-close" onclick="closePopup('{popup_id}')">×</button>
-                <div class="popup-icon">{icone}</div>
-                <h2>Obrigado, {primeiro_nome}!</h2>
-            </div>
-            
-            <div class="popup-content">
-                <p><strong>{mensagem_principal}</strong></p>
-                <p>📧 Seus dados foram enviados para nossa equipe</p>
-                <p>💰 <span class="highlight">Prêmio calculado: {formatar_valor_real(premio_calculado)}</span></p>
-                <p>🕐 {mensagem_detalhes}</p>
-            </div>
-            
-            <div class="popup-footer">
-                <button class="popup-button secondary" onclick="novoFormulario()">
-                    📝 Novo Formulário
-                </button>
-                <button class="popup-button" onclick="closePopup('{popup_id}')">
-                    👍 Entendi
-                </button>
-            </div>
-        </div>
-    </div>
+    # Mensagem principal baseada no modo
+    if email_mode == "Teste (sem envio)":
+        st.toast("🧪 Formulário processado com sucesso!", icon="✅")
+        st.success(f"### 🧪 Obrigado, {primeiro_nome}!")
+        st.info("**📧 Seus dados foram processados**\n\nModo de teste ativo - Configure o SendGrid para envio real")
+    else:
+        st.toast("✅ Solicitação recebida com sucesso!", icon="✅")
+        st.success(f"### ✅ Obrigado, {primeiro_nome}!")
+        st.info("**📧 Seus dados foram enviados para nossa equipe**\n\nNossa equipe entrará em contato em até 24 horas")
     
-    <script>
-        // Aguardar DOM carregar
-        document.addEventListener('DOMContentLoaded', function() {{
-            setupPopup('{popup_id}');
-        }});
-        
-        // Se DOM já estiver carregado
-        if (document.readyState === 'loading') {{
-            document.addEventListener('DOMContentLoaded', function() {{
-                setupPopup('{popup_id}');
-            }});
-        }} else {{
-            setupPopup('{popup_id}');
-        }}
-        
-        function setupPopup(popupId) {{
-            // Auto-fechar após 12 segundos
-            setTimeout(() => {{
-                closePopup(popupId);
-            }}, 12000);
-            
-            // Fechar com ESC
-            document.addEventListener('keydown', function(event) {{
-                if (event.key === 'Escape') {{
-                    closePopup(popupId);
-                }}
-            }});
-        }}
-        
-        function closePopup(popupId) {{
-            const popup = document.getElementById(popupId);
-            if (popup) {{
-                popup.style.opacity = '0';
-                popup.style.transform = 'scale(0.8)';
-                setTimeout(() => {{
-                    popup.remove();
-                }}, 300);
-            }}
-        }}
-        
-        function novoFormulario() {{
-            // Tentar usar o Streamlit para recarregar
-            if (window.parent && window.parent.postMessage) {{
-                window.parent.postMessage({{
-                    type: 'streamlit:rerun'
-                }}, '*');
-            }} else {{
-                // Fallback para recarregar a página
-                window.location.reload();
-            }}
-        }}
-    </script>
-    """
+    # Botões de ação
+    col1, col2 = st.columns(2)
     
-    st.markdown(popup_html, unsafe_allow_html=True)
+    with col1:
+        if st.button("📝 Novo Formulário", use_container_width=True, type="secondary"):
+            # Limpar session state e rerun
+            for key in list(st.session_state.keys()):
+                if key not in ['form_data']:
+                    del st.session_state[key]
+            st.session_state.form_data = {}
+            st.session_state.formulario_enviado = False
+            st.rerun()
+    
+    with col2:
+        if st.button("👍 Entendi", use_container_width=True, type="primary"):
+            st.toast("Obrigado! 👋", icon="👋")
 
 def main():
     render_header()
@@ -786,31 +718,23 @@ def main():
                 st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
                 st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
                 st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
-        
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
-            border: 2px solid #48bb78;
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            margin: 1rem 0;
-        ">
-            <h3 style="color: #22543d; margin: 0 0 0.5rem 0;">
-                🎯 Valor Final do Prêmio
-            </h3>
-            <div style="color: #22543d; font-size: 1.5rem; font-weight: bold;">
-                {formatar_valor_real(premio_pro_rata)}
-            </div>
-            <div style="color: #2f855a; font-size: 0.8rem; margin-top: 0.5rem;">
-                Válido de {data_inclusao.strftime('%d/%m/%Y')} até {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
     
-    enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
+    # Verificar se formulário já foi enviado
+    formulario_ja_enviado = st.session_state.get('formulario_enviado', False)
+    
+    if formulario_ja_enviado:
+        st.info("✅ **Formulário já enviado com sucesso!**\n\nAtualize a pagina se desejar enviar uma nova solicitação.")
+        # Não exibir o botão de envio
+        enviar_formulario = False
+    else:
+        enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
 
     if enviar_formulario:
+        # Verificação dupla para evitar envios múltiplos
+        if st.session_state.get('formulario_enviado', False):
+            st.warning("⚠️ Formulário já foi enviado! Use 'Novo Formulário' para enviar outra solicitação.")
+            return
+            
         dados = preparar_dados_formulario(st.session_state)
         erros = validar_formulario(dados)
         
@@ -839,6 +763,7 @@ def main():
                 email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
                 
                 if email_sucesso:
+                    st.session_state.formulario_enviado = True
                     exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode)
                     
                 else:
