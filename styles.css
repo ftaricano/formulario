@@ -298,13 +298,20 @@ h1 {
 /* Botões de busca específicos */
 .stButton > button[aria-label*="Buscar"] {
     background: var(--primary-color);
-    padding: var(--spacing-sm);
+    padding: var(--spacing-xs);
     font-size: var(--font-xs);
     font-weight: 600;
-    min-height: 3rem;
+    min-height: 2.5rem;
+    width: 2.5rem;
+    min-width: 2.5rem;
+    max-width: 2.5rem;
     box-shadow: var(--shadow-sm);
     white-space: nowrap;
-    min-width: fit-content;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 /* ==================== RADIO BUTTONS RESPONSIVOS ==================== */
@@ -540,11 +547,12 @@ h1 {
 
 /* Container para campos com botão de busca - versão web */
 .field-with-search {
-    display: flex;
+    display: flex !important;
     gap: var(--spacing-sm);
-    align-items: flex-end; /* Alinha na base dos elementos */
+    align-items: flex-end !important;
     width: 100%;
     margin-bottom: var(--spacing-sm);
+    flex-wrap: nowrap !important;
 }
 
 .field-input {
@@ -554,23 +562,36 @@ h1 {
 
 .field-button {
     flex-shrink: 0;
-    min-width: fit-content;
-    align-self: flex-end; /* Garante alinhamento na base */
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    width: 2.5rem !important;
+    align-self: flex-end;
 }
 
-/* Ajustar altura dos botões de busca para alinhar com inputs */
 .field-button .stButton > button {
-    min-height: 3rem; /* Mesma altura dos inputs */
-    height: 3rem;
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--font-sm);
+    min-height: 2.5rem !important;
+    height: 2.5rem !important;
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    padding: var(--spacing-xs) !important;
+    font-size: var(--font-md) !important;
     font-weight: 600;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 0;
-    box-sizing: border-box;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-top: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 50% !important;
+    flex-shrink: 0;
+}
+
+/* Forçar o container do botão a não quebrar linha */
+.field-button .stButton {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
 }
 
 /* Garantir que labels não quebrem o alinhamento */
@@ -641,7 +662,7 @@ h1 {
         padding: var(--spacing-xl);
     }
     
-    .header-container {
+.header-container {
         padding: var(--spacing-lg);
         margin: calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl)) var(--spacing-xl) calc(-1 * var(--spacing-xl));
         width: calc(100% + 2 * var(--spacing-xl));
@@ -657,19 +678,35 @@ h1 {
     
     /* Manter botões na mesma linha em tablet */
     .field-with-search {
-        flex-direction: row;
-        align-items: flex-end;
+        flex-direction: row !important;
+        align-items: flex-end !important;
         gap: var(--spacing-sm);
+        flex-wrap: nowrap !important;
     }
     
     .field-button {
         margin-top: 0;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        width: 2.5rem !important;
     }
     
     .field-button .stButton > button {
-        min-height: 3rem;
-        height: 3rem;
-        font-size: var(--font-sm);
+        min-height: 2.5rem !important;
+        height: 2.5rem !important;
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        font-size: var(--font-md) !important;
+        padding: var(--spacing-xs) !important;
+        border-radius: 50% !important;
+        flex-shrink: 0;
+    }
+    
+    .field-button .stButton {
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
     }
     
     .field-input .stTextInput > div > div > input {
@@ -697,45 +734,59 @@ h1 {
     }
     
     /* Tabela sempre visível */
-    .coverage-table-desktop {
-        display: block;
-    }
-    
+.coverage-table-desktop {
+    display: block;
+}
+
     /* Ajustar fonte da tabela em desktop */
-    .coverage-table {
+.coverage-table {
         font-size: var(--font-xxs); /* Mantém fonte ultra pequena */
         min-width: 500px; /* Ligeiramente maior em desktop */
-    }
-    
-    .coverage-table th {
+}
+
+.coverage-table th {
         font-size: var(--font-xxs); /* Mantém fonte ultra pequena */
         padding: 5px 7px; /* Padding ligeiramente maior em desktop */
         line-height: 1.1;
-    }
-    
-    .coverage-table td {
+}
+
+.coverage-table td {
         font-size: var(--font-xxs); /* Mantém fonte ultra pequena */
         padding: 4px 6px; /* Padding ligeiramente maior em desktop */
         line-height: 1.1;
     }
     
     /* Otimizar botões de busca para desktop */
-    .field-with-search {
-        flex-direction: row;
-        align-items: flex-end;
+.field-with-search {
+        flex-direction: row !important;
+    align-items: flex-end !important;
         gap: var(--spacing-md);
-    }
-    
-    .field-button {
+        flex-wrap: nowrap !important;
+}
+
+.field-button {
         margin-top: 0;
-        min-width: 140px; /* Largura mínima para botões */
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        width: 2.5rem !important;
     }
     
     .field-button .stButton > button {
-        min-height: 3.2rem; /* Ligeiramente maior em desktop */
-        height: 3.2rem;
-        font-size: var(--font-md);
-        padding: var(--spacing-sm) var(--spacing-lg);
+        min-height: 2.5rem !important;
+        height: 2.5rem !important;
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        font-size: var(--font-md) !important;
+        padding: var(--spacing-xs) !important;
+        border-radius: 50% !important;
+        flex-shrink: 0;
+    }
+    
+    .field-button .stButton {
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
     }
     
     .field-input .stTextInput > div > div > input {
@@ -748,23 +799,38 @@ h1 {
 /* ==================== MEDIA QUERIES - MOBILE ==================== */
 
 @media (max-width: 767px) {
-    /* Empilhar campos com botão de busca APENAS em mobile */
+    /* Manter campos com botão de busca na mesma linha em mobile também */
     .field-with-search {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row !important;
+        align-items: flex-end !important;
         gap: var(--spacing-xs);
+        flex-wrap: nowrap !important;
     }
     
     .field-button {
-        margin-top: var(--spacing-xs);
-        align-self: stretch;
+        margin-top: 0;
+        align-self: flex-end;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        width: 2.5rem !important;
     }
     
     .field-button .stButton > button {
-        min-height: 3.5rem;
-        height: 3.5rem;
-        font-size: var(--font-md);
-        width: 100%;
+        min-height: 2.5rem !important;
+        height: 2.5rem !important;
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
+        font-size: var(--font-md) !important;
+        padding: var(--spacing-xs) !important;
+        border-radius: 50% !important;
+        flex-shrink: 0;
+    }
+    
+    .field-button .stButton {
+        width: 2.5rem !important;
+        min-width: 2.5rem !important;
+        max-width: 2.5rem !important;
     }
     
     .field-input .stTextInput > div > div > input {
@@ -899,4 +965,135 @@ h1 {
 .stApp > div > div,
 .stApp > div > div > div {
     overflow: visible !important;
+}
+
+/* ==================== REMOVER BARRAS CINZAS/DIVISORES ==================== */
+
+/* Remover todos os elementos hr (barras horizontais) */
+hr {
+    display: none !important;
+}
+
+/* Remover divisores criados pelo Streamlit */
+.stMarkdown hr,
+.stMarkdown > div > hr,
+div[data-testid="stMarkdownContainer"] hr {
+    display: none !important;
+}
+
+/* Remover bordas que podem estar criando linhas divisórias */
+.stMarkdown > div {
+    border: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+/* Remover qualquer elemento que possa estar criando barras cinzas */
+.stApp div[style*="border-top"],
+.stApp div[style*="border-bottom"] {
+    border-top: none !important;
+    border-bottom: none !important;
+}
+
+/* Remover separadores automáticos do Streamlit */
+.element-container + .element-container::before {
+    display: none !important;
+}
+
+/* Garantir que não há linhas divisórias entre seções */
+.stMarkdown + .stMarkdown,
+.element-container + .element-container {
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Remover qualquer linha horizontal que possa aparecer */
+*[style*="height: 1px"],
+*[style*="height:1px"],
+div[style*="background-color: rgb(128, 128, 128)"],
+div[style*="background-color: gray"],
+div[style*="background-color: grey"] {
+    display: none !important;
+}
+
+/* ==================== FORÇAR ESTILOS DOS BOTÕES DE BUSCA ==================== */
+
+/* Regras ultra específicas para sobrescrever Streamlit */
+div[data-testid="column"] .field-button .stButton button,
+.field-button .stButton button[kind="secondary"],
+.field-button .stButton button[kind="primary"],
+.field-button div[data-testid="stButton"] button {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+    max-height: 2.5rem !important;
+    padding: 0.25rem !important;
+    border-radius: 50% !important;
+        font-size: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* Forçar container do botão */
+.field-button .stButton,
+.field-button div[data-testid="stButton"] {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    flex-shrink: 0 !important;
+}
+
+/* Forçar container field-button */
+.field-with-search .field-button {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    max-width: 2.5rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+}
+
+/* Forçar layout flex do field-with-search */
+.field-with-search {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 0.5rem !important;
+}
+
+/* ==================== BOTÕES DE BUSCA SIMPLES ==================== */
+
+/* Tornar botões com ícone 🔍 pequenos e circulares */
+button[title*="🔍"],
+button:has-text("🔍"),
+.stButton > button:contains("🔍") {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 18px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Seletor mais específico para botões do Streamlit */
+div[data-testid="column"] button {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 18px !important;
 } 

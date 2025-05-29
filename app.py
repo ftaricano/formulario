@@ -96,35 +96,35 @@ st.markdown("""
 st.markdown("""
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const isMobile = window.innerWidth <= 768;
-    
-    if (isMobile) {
-        const inputs = document.querySelectorAll('input[type="text"]');
-        inputs.forEach(input => {
-            input.style.fontSize = '16px';
-            input.addEventListener('focus', function() {
-                this.style.outline = '2px solid #182c4b';
-            });
-        });
-        
+    function styleSearchButtons() {
+        // Encontrar todos os botões que contêm 🔍
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
-            button.style.minHeight = '44px';
+            if (button.textContent.includes('🔍')) {
+                button.style.width = '40px';
+                button.style.height = '40px';
+                button.style.minWidth = '40px';
+                button.style.minHeight = '40px';
+                button.style.maxWidth = '40px';
+                button.style.maxHeight = '40px';
+                button.style.borderRadius = '50%';
+                button.style.padding = '0';
+                button.style.fontSize = '18px';
+                button.style.display = 'flex';
+                button.style.alignItems = 'center';
+                button.style.justifyContent = 'center';
+            }
         });
-        
-        document.body.style.overflowX = 'hidden';
-        document.documentElement.style.overflowX = 'hidden';
     }
     
-    const errorElements = document.querySelectorAll('.error-message');
-    if (errorElements.length > 0) {
-        errorElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    // Aplicar estilos
+    styleSearchButtons();
+    setTimeout(styleSearchButtons, 100);
+    setTimeout(styleSearchButtons, 500);
     
-    window.addEventListener('resize', function() {
-        document.body.style.overflowX = 'hidden';
-        document.documentElement.style.overflowX = 'hidden';
-    });
+    // Observar mudanças
+    const observer = new MutationObserver(styleSearchButtons);
+    observer.observe(document.body, { childList: true, subtree: true });
 });
 </script>
 """, unsafe_allow_html=True)
@@ -808,7 +808,7 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                 st.markdown("**Assunto:** 🛡️ Nova Solicitação - Seguro Incêndio Conteúdos - " + dados['nome_completo'])
                 st.markdown("**Tipo:** Notificação de nova adesão (dados completos)")
                 
-                st.markdown("---")
+                
                 
                 st.markdown("**📋 Resumo dos dados:**")
                 st.markdown(f"""
@@ -1342,36 +1342,23 @@ def render_responsive_field(label, field_name, field_type="text", help_text="", 
     """Renderiza campos de forma responsiva baseado no tamanho da tela"""
     
     if search_button:
-        # Para campos com botão de busca
-        if col_ratio is None:
-            col_ratio = [3, 1]  # Desktop padrão
+        # Usar st.columns com proporção específica para controlar tamanho
+        col1, col2 = st.columns([5, 1])  # Campo largo, botão estreito
         
-        # Container responsivo
-        st.markdown('<div class="responsive-field-container">', unsafe_allow_html=True)
+        with col1:
+            value = st.text_input(
+                label,
+                value=get_field_value(field_name),
+                help=help_text,
+                placeholder=placeholder,
+                key=field_name
+            )
         
-        # Usar CSS flexbox em vez de colunas do Streamlit para melhor controle
-        st.markdown(f"""
-        <div class="field-with-search">
-            <div class="field-input">
-        """, unsafe_allow_html=True)
-        
-        # Campo principal
-        value = st.text_input(
-            label,
-            value=get_field_value(field_name),
-            help=help_text,
-            placeholder=placeholder,
-            key=field_name
-        )
-        
-        st.markdown('</div><div class="field-button">', unsafe_allow_html=True)
-        
-        # Botão de busca
-        button_key = f"buscar_{field_name}"
-        button_pressed = st.button(f"🔍 Buscar", key=button_key, use_container_width=True)
-        
-        st.markdown('</div></div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        with col2:
+            # Adicionar espaço para alinhar com o campo
+            st.markdown("<br>", unsafe_allow_html=True)
+            button_key = f"buscar_{field_name}"
+            button_pressed = st.button("🔍", key=button_key, use_container_width=True)
         
         return value, button_pressed
     else:
@@ -1452,7 +1439,7 @@ def main():
     
     # Formulário principal - SEM st.form() para evitar travamento
     # PRIMEIRA SEÇÃO: Identificação do Quiosque
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown("")
     st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
     
     # Campo CNPJ com botão de busca usando função responsiva
@@ -1527,10 +1514,8 @@ def main():
         key="estado"
     )
     
-    st.markdown('</div>', unsafe_allow_html=True)
     
-    # SEGUNDA SEÇÃO: Identificação do Responsável
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown("")
     st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
     
     cpf = st.text_input(
@@ -1567,7 +1552,7 @@ def main():
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Seção Seguro
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown("")
     st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
     
     render_coberturas_table()
@@ -1596,7 +1581,7 @@ def main():
     # ==================== SELEÇÃO DE PLANO E CÁLCULO DINÂMICO (FORA DO FORMULÁRIO) ====================
     
     # Seção de seleção do plano FORA do formulário para atualização em tempo real
-    st.markdown('<div class="form-section">', unsafe_allow_html=True)
+    st.markdown("")
     st.markdown('<div class="section-title">🛡️ Seleção do Plano</div>', unsafe_allow_html=True)
     
     # Usar as opções que já criamos anteriormente
@@ -1632,7 +1617,7 @@ def main():
         dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
         
         # Exibe o cálculo detalhado
-        st.markdown("---")
+        
         
         # Container centralizado para o cálculo
         col_esq, col_calc, col_dir = st.columns([0.5, 2, 0.5])
@@ -1653,7 +1638,7 @@ def main():
                 st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
         
         # Valor final destacado
-        st.markdown("---")
+        
         st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
@@ -1681,7 +1666,7 @@ def main():
     # ==================== BOTÃO DE ENVIO FINAL ====================
     
     # Botão de envio FORA do formulário - ÚLTIMA COISA
-    st.markdown("---")
+    
     enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
 
     # Processamento do formulário quando enviado
