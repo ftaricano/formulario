@@ -6,14 +6,15 @@ import re
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 import os
 from functools import lru_cache
 import base64
+import io
 
 try:
     from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail, Email, To, Content
+    from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType, Disposition
     SENDGRID_AVAILABLE = True
 except ImportError:
     SENDGRID_AVAILABLE = False
@@ -156,14 +157,31 @@ class SendGridEmailSender:
             raise ValueError("API Key do SendGrid não encontrada!")
         self.sg = SendGridAPIClient(api_key=self.api_key)
     
-    def enviar_email_formulario(self, dados_formulario, email_destino="informe@cpzseg.com.br"):
+    def enviar_email_formulario(self, dados_formulario, email_destino="informe@cpzseg.com.br", arquivos=None):
         try:
             from_email = Email("noreply@cpzseg.com.br", "Grupo CPZ - Formulários")
             to_email = To(email_destino)
             subject = f"Nova Solicitação - Seguro Incêndio - {dados_formulario.get('nome_completo', 'N/A')}"
-            html_content = self._gerar_html_email(dados_formulario)
+            html_content = self._gerar_html_email(dados_formulario, arquivos)
             content = Content("text/html", html_content)
             mail = Mail(from_email, to_email, subject, content)
+            
+            # Adicionar anexos se existirem
+            if arquivos:
+                for arquivo in arquivos:
+                    try:
+                        # Converter arquivo para base64
+                        file_content = base64.b64encode(arquivo['content']).decode()
+                        attachment = Attachment(
+                            FileContent(file_content),
+                            FileName(arquivo['name']),
+                            FileType(arquivo['type']),
+                            Disposition('attachment')
+                        )
+                        mail.add_attachment(attachment)
+                    except Exception as e:
+                        st.warning(f"⚠️ Erro ao anexar arquivo {arquivo['name']}: {str(e)}")
+            
             response = self.sg.client.mail.send.post(request_body=mail.get())
             
             if response.status_code == 202:
@@ -173,8 +191,20 @@ class SendGridEmailSender:
         except Exception as e:
             return False, f"Erro ao enviar email: {str(e)}"
     
-    def _gerar_html_email(self, dados):
+    def _gerar_html_email(self, dados, arquivos=None):
         plano_nome = dados.get('plano_selecionado', '').split('\n')[0].replace(' -', '') if dados.get('plano_selecionado') else 'Não selecionado'
+        
+        # Seção de arquivos anexados
+        arquivos_html = ""
+        if arquivos:
+            arquivos_html = """
+                <h3>📎 Arquivos Anexados</h3>
+                <ul>
+            """
+            for arquivo in arquivos:
+                size_mb = arquivo['size'] / (1024 * 1024)
+                arquivos_html += f"<li><strong>{arquivo['name']}</strong> ({size_mb:.2f} MB)</li>"
+            arquivos_html += "</ul>"
         
         html = f"""
         <html>
@@ -200,6 +230,8 @@ class SendGridEmailSender:
                 <p><strong>Plano:</strong> {plano_nome}</p>
                 <p><strong>Prêmio:</strong> {formatar_valor_real(dados.get('premio_pro_rata', 0))}</p>
                 <p><strong>Dias:</strong> {dados.get('dias_restantes', 'N/A')} dias</p>
+                
+                {arquivos_html}
                 
                 <p style="margin-top: 20px; color: #666;">
                     Email gerado em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}
@@ -314,20 +346,74 @@ def calcular_pro_rata(plano: str, data_inclusao: datetime) -> Tuple[int, float]:
     premio_pro_rata = round((preco_anual / 365) * dias_restantes, 2)
     return dias_restantes, premio_pro_rata
 
-def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)") -> bool:
+def validar_arquivos(arquivos_uploaded) -> Tuple[bool, List[str], List[Dict]]:
+    """Valida arquivos uploaded e retorna status, erros e arquivos processados"""
+    if not arquivos_uploaded:
+        return True, [], []
+    
+    erros = []
+    arquivos_validos = []
+    
+    # Configurações de validação
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB por arquivo
+    MAX_TOTAL_SIZE = 25 * 1024 * 1024  # 25MB total
+    TIPOS_PERMITIDOS = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf', 
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+    ]
+    
+    total_size = 0
+    
+    for arquivo in arquivos_uploaded:
+        # Verificar tamanho individual
+        if arquivo.size > MAX_FILE_SIZE:
+            erros.append(f"Arquivo '{arquivo.name}' excede 10MB")
+            continue
+            
+        # Verificar tipo
+        if arquivo.type not in TIPOS_PERMITIDOS:
+            erros.append(f"Tipo de arquivo não permitido: '{arquivo.name}' ({arquivo.type})")
+            continue
+            
+        total_size += arquivo.size
+        
+        # Processar arquivo válido
+        arquivo_dict = {
+            'name': arquivo.name,
+            'type': arquivo.type,
+            'size': arquivo.size,
+            'content': arquivo.read()
+        }
+        arquivos_validos.append(arquivo_dict)
+    
+    # Verificar tamanho total
+    if total_size > MAX_TOTAL_SIZE:
+        erros.append(f"Tamanho total dos arquivos excede 25MB ({total_size/(1024*1024):.1f}MB)")
+        return False, erros, []
+    
+    return len(erros) == 0, erros, arquivos_validos
+
+def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)", arquivos=None) -> bool:
     try:
         if email_mode == "Teste (sem envio)":
             st.info("🧪 **Modo de teste ativado** - Email não será enviado")
+            if arquivos:
+                st.info(f"📎 {len(arquivos)} arquivo(s) processado(s) com sucesso (modo teste)")
             st.success("✅ Formulário processado com sucesso!")
             return True
         
         elif email_mode == "SendGrid" and email_sender:
             try:
                 email_destino = "informe@cpzseg.com.br"
-                sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino)
+                sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino, arquivos)
                 
                 if sucesso_empresa:
                     st.success(f"✅ Mensagem transmitida para: {email_destino}")
+                    if arquivos:
+                        st.success(f"📎 {len(arquivos)} arquivo(s) anexado(s) com sucesso")
                     return True
                 else:
                     st.error(f"❌ Erro ao transmitir mensagem: {msg_empresa}")
@@ -535,7 +621,54 @@ def render_responsive_field(label, field_name, field_type="text", help_text="", 
             key=field_name
         )
 
-def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem envio)"):
+def render_file_upload_section():
+    """Renderiza a seção de upload de arquivos"""
+    st.markdown("")
+    st.markdown('<div class="section-title">📎 Anexar Documentos (Opcional)</div>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="upload-info-section">
+        <p>
+            <strong>📋 Tipos de arquivo aceitos:</strong><br>
+            • <strong>Imagens:</strong> JPG, PNG, GIF, WebP<br>
+            • <strong>Documentos:</strong> PDF, Word, Excel<br>
+            • <strong>Texto:</strong> TXT<br><br>
+            <strong>📏 Limites:</strong> Máx. 10MB por arquivo | Máx. 25MB total
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    arquivos_uploaded = st.file_uploader(
+        "Selecione os arquivos para anexar",
+        type=['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
+        accept_multiple_files=True,
+        help="Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
+        key="arquivos_upload"
+    )
+    
+    # Mostrar informações dos arquivos selecionados
+    if arquivos_uploaded:
+        total_size = sum(arquivo.size for arquivo in arquivos_uploaded)
+        total_size_mb = total_size / (1024 * 1024)
+        
+        st.markdown(f"""
+        <div style="background: rgba(72, 187, 120, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 10px 0;">
+            <p style="margin: 0; color: #2d3748; font-size: 14px;">
+                <strong>📁 {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
+                <strong>📊 Tamanho total:</strong> {total_size_mb:.2f} MB / 25 MB
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Mostrar lista de arquivos com detalhes
+        st.markdown("**📂 Arquivos selecionados:**")
+        for i, arquivo in enumerate(arquivos_uploaded, 1):
+            size_mb = arquivo.size / (1024 * 1024)
+            st.markdown(f"**{i}.** `{arquivo.name}` - {size_mb:.2f} MB")
+    
+    return arquivos_uploaded
+
+def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem envio)", arquivos_count=0):
     """Exibe popup de sucesso após envio do formulário"""
     
     # Extrair primeiro nome
@@ -545,11 +678,17 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
     if email_mode == "Teste (sem envio)":
         st.toast("🧪 Formulário processado com sucesso!", icon="✅")
         st.success(f"### 🧪 Obrigado, {primeiro_nome}!")
-        st.info("**📧 Seus dados foram processados**\n\nModo de teste ativo - Configure o SendGrid para envio real")
+        mensagem_info = "**📧 Seus dados foram processados**\n\nModo de teste ativo - Configure o SendGrid para envio real"
+        if arquivos_count > 0:
+            mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) processado(s)"
+        st.info(mensagem_info)
     else:
         st.toast("✅ Solicitação recebida com sucesso!", icon="✅")
         st.success(f"### ✅ Obrigado, {primeiro_nome}!")
-        st.info("**📧 Seus dados foram enviados para nossa equipe**\n\nNossa equipe entrará em contato em até 24 horas")
+        mensagem_info = "**📧 Seus dados foram enviados para nossa equipe**\n\nNossa equipe entrará em contato em até 24 horas"
+        if arquivos_count > 0:
+            mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) anexado(s) com sucesso"
+        st.info(mensagem_info)
     
     # Botões de ação
     col1, col2 = st.columns(2)
@@ -650,6 +789,9 @@ def main():
     email = st.text_input("E-mail *", value=get_field_value('email'), key="email")
     telefone = st.text_input("Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
     
+    # Seção de upload de arquivos
+    arquivos_uploaded = render_file_upload_section()
+    
     st.markdown("")
     st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
     
@@ -738,6 +880,13 @@ def main():
         dados = preparar_dados_formulario(st.session_state)
         erros = validar_formulario(dados)
         
+        # Validar arquivos se existirem
+        arquivos_validos = []
+        if arquivos_uploaded:
+            arquivos_ok, erros_arquivos, arquivos_validos = validar_arquivos(arquivos_uploaded)
+            if not arquivos_ok:
+                erros.extend(erros_arquivos)
+        
         if erros:
             st.session_state.form_data.update(dados)
             st.markdown('<div class="error-message">', unsafe_allow_html=True)
@@ -760,11 +909,11 @@ def main():
             dados['premio_pro_rata'] = premio_pro_rata
             
             try:
-                email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode)
+                email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode, arquivos_validos)
                 
                 if email_sucesso:
                     st.session_state.formulario_enviado = True
-                    exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode)
+                    exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode, len(arquivos_validos))
                     
                 else:
                     st.markdown('<div class="error-message">', unsafe_allow_html=True)
