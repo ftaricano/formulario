@@ -705,8 +705,8 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
     
     # Informações do valor calculado
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-                border: 1px solid rgba(102, 126, 234, 0.2);
+    <div style="background: linear-gradient(135deg, rgba(85, 114, 156, 0.05) 0%, rgba(74, 107, 138, 0.05) 100%);
+                border: 1px solid rgba(85, 114, 156, 0.2);
                 border-radius: 16px; padding: 20px; margin: 20px 0;
                 text-align: center; backdrop-filter: blur(10px);">
         <h4 style="margin: 0 0 10px 0; color: var(--primary-color); font-weight: 700;">
@@ -923,9 +923,9 @@ def main():
         dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
         
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        <div style="background: linear-gradient(135deg, rgba(85, 114, 156, 0.05) 0%, rgba(74, 107, 138, 0.05) 100%);
                     border-radius: 16px; padding: 20px; margin: 20px 0;
-                    border: 1px solid rgba(102, 126, 234, 0.1);">
+                    border: 1px solid rgba(85, 114, 156, 0.1);">
         """, unsafe_allow_html=True)
         
         col1, col2 = st.columns(2)
