@@ -500,22 +500,31 @@ def render_header():
     """, unsafe_allow_html=True)
     
     try:
-        carregar_logo(width=200)
+        carregar_logo(width=250)
     except Exception:
         st.markdown("**🛡️ Formulário de Adesão**")
     
     st.markdown("""
         <div class="header-titles">
-            <h1 class="header-main-title">Formulário de Adesão</h1>
-            <h2 class="header-subtitle">Seguro Incêndio Conteúdos - Cessionários</h2>
-            <p class="header-company"><strong>ORLA RIO</strong></p>
+            <h1 class="header-main-title">✨ Formulário de Adesão</h1>
+            <h2 class="header-subtitle">🔥 Seguro Incêndio Conteúdos - Cessionários</h2>
+            <p class="header-company"><strong>🏖️ ORLA RIO</strong></p>
         </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 def render_coberturas_table():
-    st.markdown("### 📋 Detalhamento das Coberturas")
+    st.markdown("""
+    <div style="text-align: center; margin: 2rem 0;">
+        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">
+            📋 Detalhamento das Coberturas
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 2rem;">
+            Confira os valores de cobertura e franquias para cada plano disponível
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("""
     <div class="coverage-table-desktop">
@@ -523,65 +532,65 @@ def render_coberturas_table():
             <table class="coverage-table">
                 <thead>
                     <tr>
-                        <th>Coberturas</th>
-                        <th>Opção 1<br>R$ 250.000</th>
-                        <th>Opção 2<br>R$ 400.000</th>
-                        <th>Opção 3<br>R$ 700.000</th>
-                        <th>Franquia</th>
+                        <th>🛡️ Coberturas</th>
+                        <th>💎 Opção 1<br><span style="font-size: 0.9em; font-weight: 500;">R$ 250.000</span></th>
+                        <th>⭐ Opção 2<br><span style="font-size: 0.9em; font-weight: 500;">R$ 400.000</span></th>
+                        <th>👑 Opção 3<br><span style="font-size: 0.9em; font-weight: 500;">R$ 700.000</span></th>
+                        <th>🔢 Franquia</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>Incêndio, Raio e Explosão</td>
+                        <td>🔥 Incêndio, Raio e Explosão</td>
                         <td>R$ 250.000</td>
                         <td>R$ 400.000</td>
                         <td>R$ 700.000</td>
                         <td class="franchise">R$ 30.000</td>
                     </tr>
                     <tr>
-                        <td>Alagamento</td>
+                        <td>💧 Alagamento</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td class="franchise">R$ 15.000</td>
                     </tr>
                     <tr>
-                        <td>Danos Elétricos</td>
+                        <td>⚡ Danos Elétricos</td>
                         <td>R$ 20.000</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td class="franchise">R$ 3.000</td>
                     </tr>
                     <tr>
-                        <td>Pequenas Obras</td>
+                        <td>🔧 Pequenas Obras</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td class="franchise">R$ 5.000</td>
                     </tr>
                     <tr>
-                        <td>Perda/Pgto Aluguel (6m)</td>
+                        <td>🏠 Perda/Pgto Aluguel (6m)</td>
                         <td>R$ 20.000</td>
                         <td>R$ 30.000</td>
                         <td>R$ 40.000</td>
-                        <td class="no-franchise">Não Há</td>
+                        <td class="no-franchise">✅ Não Há</td>
                     </tr>
                     <tr>
-                        <td>Vidros</td>
+                        <td>🪟 Vidros</td>
                         <td>R$ 20.000</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td class="franchise">R$ 3.000</td>
                     </tr>
                     <tr>
-                        <td>Tumultos</td>
+                        <td>🌪️ Tumultos</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td>R$ 200.000</td>
                         <td class="franchise">R$ 5.000</td>
                     </tr>
                     <tr>
-                        <td>Vendaval</td>
+                        <td>💨 Vendaval</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td>R$ 200.000</td>
@@ -630,19 +639,19 @@ def render_file_upload_section():
     <div class="upload-info-section">
         <p>
             <strong>📋 Tipos de arquivo aceitos:</strong><br>
-            • <strong>Imagens:</strong> JPG, PNG, GIF, WebP<br>
-            • <strong>Documentos:</strong> PDF, Word, Excel<br>
-            • <strong>Texto:</strong> TXT<br><br>
+            • <strong>🖼️ Imagens:</strong> JPG, PNG, GIF, WebP<br>
+            • <strong>📄 Documentos:</strong> PDF, Word, Excel<br>
+            • <strong>📝 Texto:</strong> TXT<br><br>
             <strong>📏 Limites:</strong> Máx. 10MB por arquivo | Máx. 25MB total
         </p>
     </div>
     """, unsafe_allow_html=True)
     
     arquivos_uploaded = st.file_uploader(
-        "Selecione os arquivos para anexar",
+        "📂 Selecione os arquivos para anexar",
         type=['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
         accept_multiple_files=True,
-        help="Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
+        help="🔍 Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
         key="arquivos_upload"
     )
     
@@ -652,9 +661,12 @@ def render_file_upload_section():
         total_size_mb = total_size / (1024 * 1024)
         
         st.markdown(f"""
-        <div style="background: rgba(72, 187, 120, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #48bb78; margin: 10px 0;">
-            <p style="margin: 0; color: #2d3748; font-size: 14px;">
-                <strong>📁 {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
+        <div style="background: linear-gradient(135deg, rgba(72, 187, 120, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%); 
+                    padding: 16px; border-radius: 12px; 
+                    border-left: 4px solid #38ef7d; margin: 15px 0;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
+            <p style="margin: 0; color: #2d3748; font-size: 14px; font-weight: 500;">
+                <strong>✅ {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
                 <strong>📊 Tamanho total:</strong> {total_size_mb:.2f} MB / 25 MB
             </p>
         </div>
@@ -664,7 +676,8 @@ def render_file_upload_section():
         st.markdown("**📂 Arquivos selecionados:**")
         for i, arquivo in enumerate(arquivos_uploaded, 1):
             size_mb = arquivo.size / (1024 * 1024)
-            st.markdown(f"**{i}.** `{arquivo.name}` - {size_mb:.2f} MB")
+            file_icon = "🖼️" if arquivo.type.startswith('image/') else "📄" if arquivo.type == 'application/pdf' else "📝"
+            st.markdown(f"**{i}.** {file_icon} `{arquivo.name}` - {size_mb:.2f} MB")
     
     return arquivos_uploaded
 
@@ -678,34 +691,55 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
     if email_mode == "Teste (sem envio)":
         st.toast("🧪 Formulário processado com sucesso!", icon="✅")
         st.success(f"### 🧪 Obrigado, {primeiro_nome}!")
-        mensagem_info = "**📧 Seus dados foram processados**\n\nModo de teste ativo - Configure o SendGrid para envio real"
+        mensagem_info = "**📧 Seus dados foram processados**\n\n🔧 Modo de teste ativo - Configure o SendGrid para envio real"
         if arquivos_count > 0:
             mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) processado(s)"
         st.info(mensagem_info)
     else:
         st.toast("✅ Solicitação recebida com sucesso!", icon="✅")
-        st.success(f"### ✅ Obrigado, {primeiro_nome}!")
-        mensagem_info = "**📧 Seus dados foram enviados para nossa equipe**\n\nNossa equipe entrará em contato em até 24 horas"
+        st.success(f"### 🎉 Obrigado, {primeiro_nome}!")
+        mensagem_info = "**📧 Seus dados foram enviados para nossa equipe**\n\n⏰ Nossa equipe entrará em contato em até 24 horas"
         if arquivos_count > 0:
             mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) anexado(s) com sucesso"
         st.info(mensagem_info)
+    
+    # Informações do valor calculado
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+                border: 1px solid rgba(102, 126, 234, 0.2);
+                border-radius: 16px; padding: 20px; margin: 20px 0;
+                text-align: center; backdrop-filter: blur(10px);">
+        <h4 style="margin: 0 0 10px 0; color: var(--primary-color); font-weight: 700;">
+            💰 Valor Calculado
+        </h4>
+        <p style="margin: 0; font-size: 1.5rem; font-weight: 800; 
+                  background: var(--primary-gradient); -webkit-background-clip: text; 
+                  -webkit-text-fill-color: transparent; background-clip: text;">
+            {formatar_valor_real(premio_calculado)}
+        </p>
+        <p style="margin: 5px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+            Valor proporcional até 31/12/2024
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Botões de ação
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("📝 Novo Formulário", use_container_width=True, type="secondary"):
-            # Limpar session state e rerun
+        if st.button("🔄 Novo Formulário", use_container_width=True, type="secondary"):
+            # Limpar todos os dados do session_state relacionados ao formulário
             for key in list(st.session_state.keys()):
-                if key not in ['form_data']:
+                if key.startswith(('cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 
+                                  'complemento', 'bairro', 'cidade', 'estado', 'cpf', 
+                                  'nome_completo', 'email', 'telefone', 'plano_radio', 
+                                  'formulario_enviado', 'form_data')):
                     del st.session_state[key]
-            st.session_state.form_data = {}
-            st.session_state.formulario_enviado = False
             st.rerun()
     
     with col2:
-        if st.button("👍 Entendi", use_container_width=True, type="primary"):
-            st.toast("Obrigado! 👋", icon="👋")
+        if st.button("📊 Ver Cotação", use_container_width=True, type="primary"):
+            st.info("📋 **Resumo da Cotação:**\n\nEm breve você receberá todos os detalhes por email!")
 
 def main():
     render_header()
@@ -734,11 +768,18 @@ def main():
     if 'plano_radio' not in st.session_state and plano_opcoes_disponiveis:
         st.session_state['plano_radio'] = plano_opcoes_disponiveis[0]
     
-    st.markdown("")
-    st.markdown('<div class="section-title">📍 Identificação do Quiosque</div>', unsafe_allow_html=True)
+    # ==================== SEÇÃO 1: IDENTIFICAÇÃO DO QUIOSQUE ====================
+    st.markdown("""
+    <div class="form-section">
+        <div class="section-title">🏪 Identificação do Quiosque</div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Informe os dados do estabelecimento que será segurado
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     cnpj, buscar_cnpj_btn = render_responsive_field(
-        label="CNPJ *",
+        label="🏢 CNPJ *",
         field_name="cnpj",
         help_text="Digite o CNPJ (14 dígitos)",
         placeholder="00.000.000/0000-00",
@@ -746,14 +787,14 @@ def main():
     )
     
     razao_social = st.text_input(
-        "Razão Social",
+        "🏢 Razão Social",
         value=get_field_value('razao_social'),
         help="Preenchido automaticamente após buscar CNPJ",
         key="razao_social"
     )
     
     cep, buscar_cep_btn = render_responsive_field(
-        label="CEP *",
+        label="📍 CEP *",
         field_name="cep",
         help_text="Digite o CEP no formato 00000-000",
         placeholder="00000-000",
@@ -761,7 +802,7 @@ def main():
     )
     
     logradouro = st.text_input(
-        "Logradouro *",
+        "🏠 Logradouro *",
         value=get_field_value('logradouro'),
         help="Digite o endereço ou use a busca automática do CEP",
         key="logradouro"
@@ -769,54 +810,90 @@ def main():
     
     col1, col2 = st.columns(2)
     with col1:
-        numero = st.text_input("Número *", value=get_field_value('numero'), key="numero")
+        numero = st.text_input("🔢 Número *", value=get_field_value('numero'), key="numero")
     with col2:
-        complemento = st.text_input("Complemento", value=get_field_value('complemento'), key="complemento")
+        complemento = st.text_input("🏠 Complemento", value=get_field_value('complemento'), key="complemento")
     
     col1, col2 = st.columns(2)
     with col1:
-        bairro = st.text_input("Bairro *", value=get_field_value('bairro'), key="bairro")
+        bairro = st.text_input("🏘️ Bairro *", value=get_field_value('bairro'), key="bairro")
     with col2:
-        cidade = st.text_input("Cidade *", value=get_field_value('cidade'), key="cidade")
+        cidade = st.text_input("🌆 Cidade *", value=get_field_value('cidade'), key="cidade")
     
-    estado = st.text_input("Estado *", value=get_field_value('estado'), key="estado")
+    estado = st.text_input("🗺️ Estado *", value=get_field_value('estado'), key="estado")
     
-    st.markdown("")
-    st.markdown('<div class="section-title">👤 Identificação do Responsável</div>', unsafe_allow_html=True)
+    # ==================== SEÇÃO 2: IDENTIFICAÇÃO DO RESPONSÁVEL ====================
+    st.markdown("""
+    <div class="form-section">
+        <div class="section-title">👤 Identificação do Responsável</div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Dados da pessoa responsável pelo seguro
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    cpf = st.text_input("CPF *", value=get_field_value('cpf'), placeholder="000.000.000-00", key="cpf")
-    nome_completo = st.text_input("Nome Completo *", value=get_field_value('nome_completo'), key="nome_completo")
-    email = st.text_input("E-mail *", value=get_field_value('email'), key="email")
-    telefone = st.text_input("Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
+    cpf = st.text_input("🆔 CPF *", value=get_field_value('cpf'), placeholder="000.000.000-00", key="cpf")
+    nome_completo = st.text_input("👨‍💼 Nome Completo *", value=get_field_value('nome_completo'), key="nome_completo")
+    email = st.text_input("📧 E-mail *", value=get_field_value('email'), key="email")
+    telefone = st.text_input("📱 Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
     
-    # Seção de upload de arquivos
+    # ==================== SEÇÃO 3: UPLOAD DE ARQUIVOS ====================
+    st.markdown("""
+    <div class="form-section">
+    """, unsafe_allow_html=True)
+    
     arquivos_uploaded = render_file_upload_section()
     
-    st.markdown("")
-    st.markdown('<div class="section-title">🛡️ Plano de Seguro</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # ==================== SEÇÃO 4: PLANOS DE SEGURO ====================
+    st.markdown("""
+    <div class="form-section">
+        <div class="section-title">🛡️ Planos de Seguro</div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Escolha o plano que melhor atende às suas necessidades
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     render_coberturas_table()
     
+    # ==================== BUSCA AUTOMÁTICA ====================
     if buscar_cnpj_btn and cnpj:
         if validar_cnpj(cnpj):
-            razao_social_encontrada = buscar_cnpj(cnpj)
-            if razao_social_encontrada:
-                st.session_state.form_data['razao_social'] = razao_social_encontrada
-                st.rerun()
+            with st.spinner("🔍 Buscando dados do CNPJ..."):
+                razao_social_encontrada = buscar_cnpj(cnpj)
+                if razao_social_encontrada:
+                    st.session_state.form_data['razao_social'] = razao_social_encontrada
+                    st.success(f"✅ CNPJ encontrado: {razao_social_encontrada}")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ CNPJ não encontrado na base de dados")
         else:
             st.error("❌ CNPJ deve estar no formato 00.000.000/0000-00")
     
     if buscar_cep_btn and cep:
         if validar_cep(cep):
-            endereco = buscar_cep(cep)
-            if endereco:
-                st.session_state.form_data.update(endereco)
-                st.rerun()
+            with st.spinner("🔍 Buscando endereço..."):
+                endereco = buscar_cep(cep)
+                if endereco:
+                    st.session_state.form_data.update(endereco)
+                    st.success("✅ Endereço encontrado e preenchido automaticamente")
+                    st.rerun()
+                else:
+                    st.warning("⚠️ CEP não encontrado")
         else:
             st.error("❌ CEP deve estar no formato 00000-000")
 
-    st.markdown("")
-    st.markdown('<div class="section-title">🛡️ Seleção do Plano</div>', unsafe_allow_html=True)
+    # ==================== SEÇÃO 5: SELEÇÃO DO PLANO ====================
+    st.markdown("""
+    <div class="form-section">
+        <div class="section-title">⭐ Seleção do Plano</div>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+            Selecione uma das opções de cobertura disponíveis
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     plano_opcoes = plano_opcoes_disponiveis
     default_index = 0
@@ -835,6 +912,7 @@ def main():
         horizontal=True
     )
     
+    # ==================== CÁLCULO DE VALORES ====================
     if plano_selecionado:
         plano_nome = plano_selecionado.split('\n')[0].replace(' -', '')
         preco_anual = PLANOS_SEGURO[plano_nome]
@@ -844,32 +922,79 @@ def main():
         
         dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
         
-        col_esq, col_calc, col_dir = st.columns([0.5, 2, 0.5])
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+                    border-radius: 16px; padding: 20px; margin: 20px 0;
+                    border: 1px solid rgba(102, 126, 234, 0.1);">
+        """, unsafe_allow_html=True)
         
-        with col_calc:
-            col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            <div style="text-align: center;">
+                <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
+                    📅 Período de Vigência
+                </h4>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown(f"• **Data de Inclusão:** {data_inclusao.strftime('%d/%m/%Y')}")
+            st.markdown(f"• **Final da Vigência:** {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}")
+            st.markdown(f"• **Dias Restantes:** {dias_restantes} dias")
             
-            with col1:
-                st.markdown("**📅 Período de Vigência:**")
-                st.markdown(f"• **Data de Inclusão:** {data_inclusao.strftime('%d/%m/%Y')}")
-                st.markdown(f"• **Final da Vigência:** {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}")
-                st.markdown(f"• **Dias Restantes:** {dias_restantes} dias")
-                
-            with col2:
-                st.markdown("**💰 Memória de Cálculo:**")
-                st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
-                st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
-                st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
+        with col2:
+            st.markdown("""
+            <div style="text-align: center;">
+                <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
+                    💰 Memória de Cálculo
+                </h4>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
+            st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
+            st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Destaque do valor final
+        st.markdown(f"""
+        <div style="background: var(--success-gradient); color: white; 
+                    border-radius: 16px; padding: 20px; margin: 20px 0;
+                    text-align: center; box-shadow: var(--shadow-large);">
+            <h3 style="margin: 0; font-weight: 800; font-size: 1.8rem;">
+                💎 Valor Total: {formatar_valor_real(premio_pro_rata)}
+            </h3>
+            <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem;">
+                Valor proporcional para o período selecionado
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # ==================== ENVIO DO FORMULÁRIO ====================
+    st.markdown("""
+    <div style="margin: 2rem 0 1rem 0; text-align: center;">
+        <hr style="margin: 1rem 0;">
+    </div>
+    """, unsafe_allow_html=True)
     
     # Verificar se formulário já foi enviado
     formulario_ja_enviado = st.session_state.get('formulario_enviado', False)
     
     if formulario_ja_enviado:
-        st.info("✅ **Formulário já enviado com sucesso!**\n\nAtualize a pagina se desejar enviar uma nova solicitação.")
+        st.success("✅ **Formulário já enviado com sucesso!**")
+        st.info("🔄 Atualize a página se desejar enviar uma nova solicitação.")
         # Não exibir o botão de envio
         enviar_formulario = False
     else:
-        enviar_formulario = st.button("🚀 Calcular e Enviar", use_container_width=True, type="primary", key="enviar_formulario_final")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            enviar_formulario = st.button(
+                "🚀 Calcular e Enviar Solicitação", 
+                use_container_width=True, 
+                type="primary", 
+                key="enviar_formulario_final",
+                help="Clique para processar sua solicitação de seguro"
+            )
 
     if enviar_formulario:
         # Verificação dupla para evitar envios múltiplos
@@ -877,51 +1002,53 @@ def main():
             st.warning("⚠️ Formulário já foi enviado! Use 'Novo Formulário' para enviar outra solicitação.")
             return
             
-        dados = preparar_dados_formulario(st.session_state)
-        erros = validar_formulario(dados)
-        
-        # Validar arquivos se existirem
-        arquivos_validos = []
-        if arquivos_uploaded:
-            arquivos_ok, erros_arquivos, arquivos_validos = validar_arquivos(arquivos_uploaded)
-            if not arquivos_ok:
-                erros.extend(erros_arquivos)
-        
-        if erros:
-            st.session_state.form_data.update(dados)
-            st.markdown('<div class="error-message">', unsafe_allow_html=True)
-            st.markdown("❌ **Por favor, corrija os seguintes campos:**")
-            for erro in erros:
-                st.markdown(f"• {erro}")
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.info("💡 **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente.")
-        else:
-            st.session_state.form_data = {}
+        with st.spinner("⏳ Processando sua solicitação..."):
+            dados = preparar_dados_formulario(st.session_state)
+            erros = validar_formulario(dados)
             
-            plano_nome = dados['plano_selecionado'].split('\n')[0].replace(' -', '')
-            tz_sao_paulo = timezone(timedelta(hours=-3))
-            data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
-            dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
+            # Validar arquivos se existirem
+            arquivos_validos = []
+            if arquivos_uploaded:
+                arquivos_ok, erros_arquivos, arquivos_validos = validar_arquivos(arquivos_uploaded)
+                if not arquivos_ok:
+                    erros.extend(erros_arquivos)
             
-            dados['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
-            dados['data_inclusao'] = data_inclusao.strftime('%Y-%m-%d')
-            dados['dias_restantes'] = dias_restantes
-            dados['premio_pro_rata'] = premio_pro_rata
-            
-            try:
-                email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode, arquivos_validos)
+            if erros:
+                st.session_state.form_data.update(dados)
+                st.markdown('<div class="error-message">', unsafe_allow_html=True)
+                st.markdown("❌ **Por favor, corrija os seguintes campos:**")
+                for erro in erros:
+                    st.markdown(f"• {erro}")
+                st.markdown("</div>", unsafe_allow_html=True)
+                st.info("💡 **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente.")
+            else:
+                st.session_state.form_data = {}
                 
-                if email_sucesso:
-                    st.session_state.formulario_enviado = True
-                    exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode, len(arquivos_validos))
+                plano_nome = dados['plano_selecionado'].split('\n')[0].replace(' -', '')
+                tz_sao_paulo = timezone(timedelta(hours=-3))
+                data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
+                dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
+                
+                dados['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
+                dados['data_inclusao'] = data_inclusao.strftime('%Y-%m-%d')
+                dados['dias_restantes'] = dias_restantes
+                dados['premio_pro_rata'] = premio_pro_rata
+                
+                try:
+                    email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode, arquivos_validos)
                     
-                else:
-                    st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                    st.markdown("❌ **Erro ao transmitir mensagem. Tente novamente.**")
-                    st.markdown('</div>', unsafe_allow_html=True)
-                    
-            except Exception as e:
-                st.error(f"❌ Erro crítico: {str(e)}")
+                    if email_sucesso:
+                        st.session_state.formulario_enviado = True
+                        st.balloons()
+                        exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode, len(arquivos_validos))
+                        
+                    else:
+                        st.markdown('<div class="error-message">', unsafe_allow_html=True)
+                        st.markdown("❌ **Erro ao transmitir mensagem. Tente novamente.**")
+                        st.markdown('</div>', unsafe_allow_html=True)
+                        
+                except Exception as e:
+                    st.error(f"❌ Erro crítico: {str(e)}")
 
 if __name__ == "__main__":
     main() 
