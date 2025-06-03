@@ -36,7 +36,7 @@ def load_css():
             css_content = f.read()
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
-        st.warning("⚠️ Arquivo styles.css não encontrado.")
+        st.warning("⚠ Arquivo styles.css não encontrado.")
 
 load_css()
 
@@ -180,7 +180,7 @@ class SendGridEmailSender:
                         )
                         mail.add_attachment(attachment)
                     except Exception as e:
-                        st.warning(f"⚠️ Erro ao anexar arquivo {arquivo['name']}: {str(e)}")
+                        st.warning(f"⚠ Erro ao anexar arquivo {arquivo['name']}: {str(e)}")
             
             response = self.sg.client.mail.send.post(request_body=mail.get())
             
@@ -198,7 +198,7 @@ class SendGridEmailSender:
         arquivos_html = ""
         if arquivos:
             arquivos_html = """
-                <h3>📎 Arquivos Anexados</h3>
+                <h3>▪ Arquivos Anexados</h3>
                 <ul>
             """
             for arquivo in arquivos:
@@ -210,9 +210,9 @@ class SendGridEmailSender:
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6;">
             <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #182c4b;">🛡️ Nova Solicitação - Seguro Incêndio</h2>
+                <h2 style="color: #182c4b;">▪ Nova Solicitação - Seguro Incêndio</h2>
                 
-                <h3>👤 Dados Pessoais</h3>
+                <h3>▪ Dados Pessoais</h3>
                 <p><strong>Nome:</strong> {dados.get('nome_completo', 'N/A')}</p>
                 <p><strong>CPF:</strong> {formatar_cpf(dados.get('cpf', ''))}</p>
                 <p><strong>Email:</strong> {dados.get('email', 'N/A')}</p>
@@ -220,13 +220,13 @@ class SendGridEmailSender:
                 <p><strong>CNPJ:</strong> {formatar_cnpj(dados.get('cnpj', ''))}</p>
                 <p><strong>Razão Social:</strong> {dados.get('razao_social', 'N/A')}</p>
                 
-                <h3>📍 Endereço</h3>
+                <h3>▪ Endereço</h3>
                 <p><strong>CEP:</strong> {formatar_cep(dados.get('cep', ''))}</p>
                 <p><strong>Endereço:</strong> {dados.get('logradouro', 'N/A')}, {dados.get('numero', 'N/A')}</p>
                 <p><strong>Bairro:</strong> {dados.get('bairro', 'N/A')}</p>
                 <p><strong>Cidade/Estado:</strong> {dados.get('cidade', 'N/A')} - {dados.get('estado', 'N/A')}</p>
                 
-                <h3>🛡️ Plano</h3>
+                <h3>▪ Plano</h3>
                 <p><strong>Plano:</strong> {plano_nome}</p>
                 <p><strong>Prêmio:</strong> {formatar_valor_real(dados.get('premio_pro_rata', 0))}</p>
                 <p><strong>Dias:</strong> {dados.get('dias_restantes', 'N/A')} dias</p>
@@ -254,7 +254,7 @@ def configurar_sendgrid_streamlit():
                     sender = SendGridEmailSender(api_key_from_secrets)
                     return sender, True, email_mode
                 except Exception as e:
-                    st.warning(f"⚠️ Problema na configuração do SendGrid: {str(e)}")
+                    st.warning(f"⚠ Problema na configuração do SendGrid: {str(e)}")
                     return None, False, "Teste (sem envio)"
     except Exception:
         pass
@@ -267,7 +267,7 @@ def configurar_sendgrid_streamlit():
         except Exception:
             pass
     
-    st.info("🧪 **Modo de teste ativo** - Configure o SendGrid para envio real")
+    st.info("▪ **Modo de teste ativo** - Configure o SendGrid para envio real")
     return None, False, "Teste (sem envio)"
 
 @lru_cache(maxsize=100)
@@ -289,7 +289,7 @@ def buscar_cnpj(cnpj: str) -> Optional[str]:
             if data.get('status') == 'OK':
                 return data.get('nome', '')
             else:
-                st.error(f"❌ Erro na consulta CNPJ: {data.get('message', 'CNPJ inválido')}")
+                st.error(f"✗ Erro na consulta CNPJ: {data.get('message', 'CNPJ inválido')}")
                 return None
         except requests.exceptions.Timeout:
             if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
@@ -297,7 +297,7 @@ def buscar_cnpj(cnpj: str) -> Optional[str]:
             continue
         except Exception as e:
             if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(f"❌ Erro na consulta do CNPJ: {str(e)}")
+                st.error(f"✗ Erro na consulta do CNPJ: {str(e)}")
             continue
     
         return None
@@ -334,7 +334,7 @@ def buscar_cep(cep: str) -> Optional[Dict]:
             continue
         except Exception as e:
             if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(f"❌ Erro na consulta do CEP: {str(e)}")
+                st.error(f"✗ Erro na consulta do CEP: {str(e)}")
             continue
     
     return None
@@ -399,10 +399,10 @@ def validar_arquivos(arquivos_uploaded) -> Tuple[bool, List[str], List[Dict]]:
 def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)", arquivos=None) -> bool:
     try:
         if email_mode == "Teste (sem envio)":
-            st.info("🧪 **Modo de teste ativado** - Email não será enviado")
+            st.info("▪ **Modo de teste ativado** - Email não será enviado")
             if arquivos:
-                st.info(f"📎 {len(arquivos)} arquivo(s) processado(s) com sucesso (modo teste)")
-            st.success("✅ Formulário processado com sucesso!")
+                st.info(f"▪ {len(arquivos)} arquivo(s) processado(s) com sucesso (modo teste)")
+            st.success("✓ Formulário processado com sucesso!")
             return True
         
         elif email_mode == "SendGrid" and email_sender:
@@ -411,23 +411,23 @@ def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (
                 sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino, arquivos)
                 
                 if sucesso_empresa:
-                    st.success(f"✅ Mensagem transmitida para: {email_destino}")
+                    st.success(f"✓ Mensagem transmitida para: {email_destino}")
                     if arquivos:
-                        st.success(f"📎 {len(arquivos)} arquivo(s) anexado(s) com sucesso")
+                        st.success(f"▪ {len(arquivos)} arquivo(s) anexado(s) com sucesso")
                     return True
                 else:
-                    st.error(f"❌ Erro ao transmitir mensagem: {msg_empresa}")
+                    st.error(f"✗ Erro ao transmitir mensagem: {msg_empresa}")
                     return False
             except Exception as e:
-                st.error(f"❌ Erro no SendGrid: {str(e)}")
+                st.error(f"✗ Erro no SendGrid: {str(e)}")
                 return False
         
         else:
-            st.error("❌ Configuração de email inválida")
+            st.error("✗ Configuração de email inválida")
             return False
             
     except Exception as e:
-        st.error(f"❌ Erro inesperado: {str(e)}")
+        st.error(f"✗ Erro inesperado: {str(e)}")
         return False
 
 def validar_formulario(dados: Dict) -> list:
@@ -502,13 +502,13 @@ def render_header():
     try:
         carregar_logo(width=250)
     except Exception:
-        st.markdown("**🛡️ Formulário de Adesão**")
+        st.markdown("**📋 Formulário de Adesão**")
     
     st.markdown("""
         <div class="header-titles">
-            <h1 class="header-main-title">✨ Formulário de Adesão</h1>
-            <h2 class="header-subtitle">🔥 Seguro Incêndio Conteúdos - Cessionários</h2>
-            <p class="header-company"><strong>🏖️ ORLA RIO</strong></p>
+            <h1 class="header-main-title">Formulário de Adesão</h1>
+            <h2 class="header-subtitle">Seguro Incêndio Conteúdos - Cessionários</h2>
+            <p class="header-company"><strong>ORLA RIO</strong></p>
         </div>
         </div>
     </div>
@@ -518,7 +518,7 @@ def render_coberturas_table():
     st.markdown("""
     <div style="text-align: center; margin: 2rem 0;">
         <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">
-            📋 Detalhamento das Coberturas
+            ■ Detalhamento das Coberturas
         </h3>
         <p style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 2rem;">
             Confira os valores de cobertura e franquias para cada plano disponível
@@ -532,65 +532,65 @@ def render_coberturas_table():
             <table class="coverage-table">
                 <thead>
                     <tr>
-                        <th>🛡️ Coberturas</th>
-                        <th>💎 Opção 1<br><span style="font-size: 0.9em; font-weight: 500;">R$ 250.000</span></th>
-                        <th>⭐ Opção 2<br><span style="font-size: 0.9em; font-weight: 500;">R$ 400.000</span></th>
-                        <th>👑 Opção 3<br><span style="font-size: 0.9em; font-weight: 500;">R$ 700.000</span></th>
-                        <th>🔢 Franquia</th>
+                        <th>▪ Coberturas</th>
+                        <th>◆ Opção 1<br><span style="font-size: 0.9em; font-weight: 500;">R$ 250.000</span></th>
+                        <th>◆ Opção 2<br><span style="font-size: 0.9em; font-weight: 500;">R$ 400.000</span></th>
+                        <th>◆ Opção 3<br><span style="font-size: 0.9em; font-weight: 500;">R$ 700.000</span></th>
+                        <th>▪ Franquia</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td>🔥 Incêndio, Raio e Explosão</td>
+                        <td>Incêndio, Raio e Explosão</td>
                         <td>R$ 250.000</td>
                         <td>R$ 400.000</td>
                         <td>R$ 700.000</td>
                         <td class="franchise">R$ 30.000</td>
                     </tr>
                     <tr>
-                        <td>💧 Alagamento</td>
+                        <td>Alagamento</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td class="franchise">R$ 15.000</td>
                     </tr>
                     <tr>
-                        <td>⚡ Danos Elétricos</td>
+                        <td>Danos Elétricos</td>
                         <td>R$ 20.000</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td class="franchise">R$ 3.000</td>
                     </tr>
                     <tr>
-                        <td>🔧 Pequenas Obras</td>
+                        <td>Pequenas Obras</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td class="franchise">R$ 5.000</td>
                     </tr>
                     <tr>
-                        <td>🏠 Perda/Pgto Aluguel (6m)</td>
+                        <td>Perda/Pgto Aluguel (6m)</td>
                         <td>R$ 20.000</td>
                         <td>R$ 30.000</td>
                         <td>R$ 40.000</td>
-                        <td class="no-franchise">✅ Não Há</td>
+                        <td class="no-franchise">Não Há</td>
                     </tr>
                     <tr>
-                        <td>🪟 Vidros</td>
+                        <td>Vidros</td>
                         <td>R$ 20.000</td>
                         <td>R$ 50.000</td>
                         <td>R$ 100.000</td>
                         <td class="franchise">R$ 3.000</td>
                     </tr>
                     <tr>
-                        <td>🌪️ Tumultos</td>
+                        <td>Tumultos</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td>R$ 200.000</td>
                         <td class="franchise">R$ 5.000</td>
                     </tr>
                     <tr>
-                        <td>💨 Vendaval</td>
+                        <td>Vendaval</td>
                         <td>R$ 100.000</td>
                         <td>R$ 150.000</td>
                         <td>R$ 200.000</td>
@@ -633,25 +633,25 @@ def render_responsive_field(label, field_name, field_type="text", help_text="", 
 def render_file_upload_section():
     """Renderiza a seção de upload de arquivos"""
     st.markdown("")
-    st.markdown('<div class="section-title">📎 Anexar Documentos (Opcional)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">▪ Anexar Documentos (Opcional)</div>', unsafe_allow_html=True)
     
     st.markdown("""
     <div class="upload-info-section">
         <p>
-            <strong>📋 Tipos de arquivo aceitos:</strong><br>
-            • <strong>🖼️ Imagens:</strong> JPG, PNG, GIF, WebP<br>
-            • <strong>📄 Documentos:</strong> PDF, Word, Excel<br>
-            • <strong>📝 Texto:</strong> TXT<br><br>
-            <strong>📏 Limites:</strong> Máx. 10MB por arquivo | Máx. 25MB total
+            <strong>■ Tipos de arquivo aceitos:</strong><br>
+            • <strong>Imagens:</strong> JPG, PNG, GIF, WebP<br>
+            • <strong>Documentos:</strong> PDF, Word, Excel<br>
+            • <strong>Texto:</strong> TXT<br><br>
+            <strong>■ Limites:</strong> Máx. 10MB por arquivo | Máx. 25MB total
         </p>
     </div>
     """, unsafe_allow_html=True)
     
     arquivos_uploaded = st.file_uploader(
-        "📂 Selecione os arquivos para anexar",
+        "▪ Selecione os arquivos para anexar",
         type=['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
         accept_multiple_files=True,
-        help="🔍 Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
+        help="Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
         key="arquivos_upload"
     )
     
@@ -666,17 +666,17 @@ def render_file_upload_section():
                     border-left: 4px solid #38ef7d; margin: 15px 0;
                     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
             <p style="margin: 0; color: #2d3748; font-size: 14px; font-weight: 500;">
-                <strong>✅ {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
-                <strong>📊 Tamanho total:</strong> {total_size_mb:.2f} MB / 25 MB
+                <strong>✓ {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
+                <strong>■ Tamanho total:</strong> {total_size_mb:.2f} MB / 25 MB
             </p>
         </div>
         """, unsafe_allow_html=True)
         
         # Mostrar lista de arquivos com detalhes
-        st.markdown("**📂 Arquivos selecionados:**")
+        st.markdown("**▪ Arquivos selecionados:**")
         for i, arquivo in enumerate(arquivos_uploaded, 1):
             size_mb = arquivo.size / (1024 * 1024)
-            file_icon = "🖼️" if arquivo.type.startswith('image/') else "📄" if arquivo.type == 'application/pdf' else "📝"
+            file_icon = "▪" if arquivo.type.startswith('image/') else "▫" if arquivo.type == 'application/pdf' else "▪"
             st.markdown(f"**{i}.** {file_icon} `{arquivo.name}` - {size_mb:.2f} MB")
     
     return arquivos_uploaded
@@ -689,18 +689,18 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
     
     # Mensagem principal baseada no modo
     if email_mode == "Teste (sem envio)":
-        st.toast("🧪 Formulário processado com sucesso!", icon="✅")
-        st.success(f"### 🧪 Obrigado, {primeiro_nome}!")
-        mensagem_info = "**📧 Seus dados foram processados**\n\n🔧 Modo de teste ativo - Configure o SendGrid para envio real"
+        st.toast("✓ Formulário processado com sucesso!", icon="✅")
+        st.success(f"### ✓ Obrigado, {primeiro_nome}!")
+        mensagem_info = "**■ Seus dados foram processados**\n\n▪ Modo de teste ativo - Configure o SendGrid para envio real"
         if arquivos_count > 0:
-            mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) processado(s)"
+            mensagem_info += f"\n\n▪ {arquivos_count} arquivo(s) processado(s)"
         st.info(mensagem_info)
     else:
-        st.toast("✅ Solicitação recebida com sucesso!", icon="✅")
-        st.success(f"### 🎉 Obrigado, {primeiro_nome}!")
-        mensagem_info = "**📧 Seus dados foram enviados para nossa equipe**\n\n⏰ Nossa equipe entrará em contato em até 24 horas"
+        st.toast("✓ Solicitação recebida com sucesso!", icon="✅")
+        st.success(f"### ✓ Obrigado, {primeiro_nome}!")
+        mensagem_info = "**■ Seus dados foram enviados para nossa equipe**\n\n▪ Nossa equipe entrará em contato em até 24 horas"
         if arquivos_count > 0:
-            mensagem_info += f"\n\n📎 {arquivos_count} arquivo(s) anexado(s) com sucesso"
+            mensagem_info += f"\n\n▪ {arquivos_count} arquivo(s) anexado(s) com sucesso"
         st.info(mensagem_info)
     
     # Informações do valor calculado
@@ -710,7 +710,7 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
                 border-radius: 16px; padding: 20px; margin: 20px 0;
                 text-align: center; backdrop-filter: blur(10px);">
         <h4 style="margin: 0 0 10px 0; color: var(--primary-color); font-weight: 700;">
-            💰 Valor Calculado
+            ▪ Valor Calculado
         </h4>
         <p style="margin: 0; font-size: 1.5rem; font-weight: 800; 
                   background: var(--primary-gradient); -webkit-background-clip: text; 
@@ -727,7 +727,7 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("🔄 Novo Formulário", use_container_width=True, type="secondary"):
+        if st.button("↻ Novo Formulário", use_container_width=True, type="secondary"):
             # Limpar todos os dados do session_state relacionados ao formulário
             for key in list(st.session_state.keys()):
                 if key.startswith(('cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 
@@ -738,8 +738,8 @@ def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem 
             st.rerun()
     
     with col2:
-        if st.button("📊 Ver Cotação", use_container_width=True, type="primary"):
-            st.info("📋 **Resumo da Cotação:**\n\nEm breve você receberá todos os detalhes por email!")
+        if st.button("▪ Ver Cotação", use_container_width=True, type="primary"):
+            st.info("■ **Resumo da Cotação:**\n\nEm breve você receberá todos os detalhes por email!")
 
 def main():
     render_header()
@@ -751,12 +751,12 @@ def main():
     
     if st.session_state.get('show_errors', False) and st.session_state.get('form_errors', []):
         st.markdown('<div class="error-message">', unsafe_allow_html=True)
-        st.markdown("❌ **Erros encontrados no formulário anterior:**")
+        st.markdown("✗ **Erros encontrados no formulário anterior:**")
         for erro in st.session_state.form_errors:
             st.markdown(f"• {erro}")
         st.markdown("</div>", unsafe_allow_html=True)
         
-        st.info("💡 **Seus dados foram preservados!** Corrija os campos destacados abaixo.")
+        st.info("▪ **Seus dados foram preservados!** Corrija os campos destacados abaixo.")
         
         del st.session_state.form_errors
         del st.session_state.show_errors
@@ -771,7 +771,7 @@ def main():
     # ==================== SEÇÃO 1: IDENTIFICAÇÃO DO QUIOSQUE ====================
     st.markdown("""
     <div class="form-section">
-        <div class="section-title">🏪 Identificação do Quiosque</div>
+        <div class="section-title">▪ Identificação do Quiosque</div>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
             Informe os dados do estabelecimento que será segurado
         </p>
@@ -779,7 +779,7 @@ def main():
     """, unsafe_allow_html=True)
     
     cnpj, buscar_cnpj_btn = render_responsive_field(
-        label="🏢 CNPJ *",
+        label="▪ CNPJ *",
         field_name="cnpj",
         help_text="Digite o CNPJ (14 dígitos)",
         placeholder="00.000.000/0000-00",
@@ -787,14 +787,14 @@ def main():
     )
     
     razao_social = st.text_input(
-        "🏢 Razão Social",
+        "▪ Razão Social",
         value=get_field_value('razao_social'),
         help="Preenchido automaticamente após buscar CNPJ",
         key="razao_social"
     )
     
     cep, buscar_cep_btn = render_responsive_field(
-        label="📍 CEP *",
+        label="▪ CEP *",
         field_name="cep",
         help_text="Digite o CEP no formato 00000-000",
         placeholder="00000-000",
@@ -802,7 +802,7 @@ def main():
     )
     
     logradouro = st.text_input(
-        "🏠 Logradouro *",
+        "▪ Logradouro *",
         value=get_field_value('logradouro'),
         help="Digite o endereço ou use a busca automática do CEP",
         key="logradouro"
@@ -810,32 +810,32 @@ def main():
     
     col1, col2 = st.columns(2)
     with col1:
-        numero = st.text_input("🔢 Número *", value=get_field_value('numero'), key="numero")
+        numero = st.text_input("▪ Número *", value=get_field_value('numero'), key="numero")
     with col2:
-        complemento = st.text_input("🏠 Complemento", value=get_field_value('complemento'), key="complemento")
+        complemento = st.text_input("▪ Complemento", value=get_field_value('complemento'), key="complemento")
     
     col1, col2 = st.columns(2)
     with col1:
-        bairro = st.text_input("🏘️ Bairro *", value=get_field_value('bairro'), key="bairro")
+        bairro = st.text_input("▪ Bairro *", value=get_field_value('bairro'), key="bairro")
     with col2:
-        cidade = st.text_input("🌆 Cidade *", value=get_field_value('cidade'), key="cidade")
+        cidade = st.text_input("▪ Cidade *", value=get_field_value('cidade'), key="cidade")
     
-    estado = st.text_input("🗺️ Estado *", value=get_field_value('estado'), key="estado")
+    estado = st.text_input("▪ Estado *", value=get_field_value('estado'), key="estado")
     
     # ==================== SEÇÃO 2: IDENTIFICAÇÃO DO RESPONSÁVEL ====================
     st.markdown("""
     <div class="form-section">
-        <div class="section-title">👤 Identificação do Responsável</div>
+        <div class="section-title">▪ Identificação do Responsável</div>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
             Dados da pessoa responsável pelo seguro
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    cpf = st.text_input("🆔 CPF *", value=get_field_value('cpf'), placeholder="000.000.000-00", key="cpf")
-    nome_completo = st.text_input("👨‍💼 Nome Completo *", value=get_field_value('nome_completo'), key="nome_completo")
-    email = st.text_input("📧 E-mail *", value=get_field_value('email'), key="email")
-    telefone = st.text_input("📱 Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
+    cpf = st.text_input("▪ CPF *", value=get_field_value('cpf'), placeholder="000.000.000-00", key="cpf")
+    nome_completo = st.text_input("▪ Nome Completo *", value=get_field_value('nome_completo'), key="nome_completo")
+    email = st.text_input("▪ E-mail *", value=get_field_value('email'), key="email")
+    telefone = st.text_input("▪ Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
     
     # ==================== SEÇÃO 3: UPLOAD DE ARQUIVOS ====================
     st.markdown("""
@@ -849,7 +849,7 @@ def main():
     # ==================== SEÇÃO 4: PLANOS DE SEGURO ====================
     st.markdown("""
     <div class="form-section">
-        <div class="section-title">🛡️ Planos de Seguro</div>
+        <div class="section-title">▪ Planos de Seguro</div>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
             Escolha o plano que melhor atende às suas necessidades
         </p>
@@ -861,34 +861,34 @@ def main():
     # ==================== BUSCA AUTOMÁTICA ====================
     if buscar_cnpj_btn and cnpj:
         if validar_cnpj(cnpj):
-            with st.spinner("🔍 Buscando dados do CNPJ..."):
+            with st.spinner("▪ Buscando dados do CNPJ..."):
                 razao_social_encontrada = buscar_cnpj(cnpj)
                 if razao_social_encontrada:
                     st.session_state.form_data['razao_social'] = razao_social_encontrada
-                    st.success(f"✅ CNPJ encontrado: {razao_social_encontrada}")
+                    st.success(f"✓ CNPJ encontrado: {razao_social_encontrada}")
                     st.rerun()
                 else:
-                    st.warning("⚠️ CNPJ não encontrado na base de dados")
+                    st.warning("⚠ CNPJ não encontrado na base de dados")
         else:
-            st.error("❌ CNPJ deve estar no formato 00.000.000/0000-00")
+            st.error("✗ CNPJ deve estar no formato 00.000.000/0000-00")
     
     if buscar_cep_btn and cep:
         if validar_cep(cep):
-            with st.spinner("🔍 Buscando endereço..."):
+            with st.spinner("▪ Buscando endereço..."):
                 endereco = buscar_cep(cep)
                 if endereco:
                     st.session_state.form_data.update(endereco)
-                    st.success("✅ Endereço encontrado e preenchido automaticamente")
+                    st.success("✓ Endereço encontrado e preenchido automaticamente")
                     st.rerun()
                 else:
-                    st.warning("⚠️ CEP não encontrado")
+                    st.warning("⚠ CEP não encontrado")
         else:
-            st.error("❌ CEP deve estar no formato 00000-000")
+            st.error("✗ CEP deve estar no formato 00000-000")
 
     # ==================== SEÇÃO 5: SELEÇÃO DO PLANO ====================
     st.markdown("""
     <div class="form-section">
-        <div class="section-title">⭐ Seleção do Plano</div>
+        <div class="section-title">▪ Seleção do Plano</div>
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
             Selecione uma das opções de cobertura disponíveis
         </p>
@@ -934,7 +934,7 @@ def main():
             st.markdown("""
             <div style="text-align: center;">
                 <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
-                    📅 Período de Vigência
+                    ▪ Período de Vigência
                 </h4>
             </div>
             """, unsafe_allow_html=True)
@@ -946,7 +946,7 @@ def main():
             st.markdown("""
             <div style="text-align: center;">
                 <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
-                    💰 Memória de Cálculo
+                    ▪ Memória de Cálculo
                 </h4>
             </div>
             """, unsafe_allow_html=True)
@@ -962,7 +962,7 @@ def main():
                     border-radius: 16px; padding: 20px; margin: 20px 0;
                     text-align: center; box-shadow: var(--shadow-large);">
             <h3 style="margin: 0; font-weight: 800; font-size: 1.8rem;">
-                💎 Valor Total: {formatar_valor_real(premio_pro_rata)}
+                ▪ Valor Total: {formatar_valor_real(premio_pro_rata)}
             </h3>
             <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem;">
                 Valor proporcional para o período selecionado
@@ -981,15 +981,15 @@ def main():
     formulario_ja_enviado = st.session_state.get('formulario_enviado', False)
     
     if formulario_ja_enviado:
-        st.success("✅ **Formulário já enviado com sucesso!**")
-        st.info("🔄 Atualize a página se desejar enviar uma nova solicitação.")
+        st.success("✓ **Formulário já enviado com sucesso!**")
+        st.info("↻ Atualize a página se desejar enviar uma nova solicitação.")
         # Não exibir o botão de envio
         enviar_formulario = False
     else:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             enviar_formulario = st.button(
-                "🚀 Calcular e Enviar Solicitação", 
+                "▶ Calcular e Enviar Solicitação", 
                 use_container_width=True, 
                 type="primary", 
                 key="enviar_formulario_final",
@@ -999,10 +999,10 @@ def main():
     if enviar_formulario:
         # Verificação dupla para evitar envios múltiplos
         if st.session_state.get('formulario_enviado', False):
-            st.warning("⚠️ Formulário já foi enviado! Use 'Novo Formulário' para enviar outra solicitação.")
+            st.warning("⚠ Formulário já foi enviado! Use 'Novo Formulário' para enviar outra solicitação.")
             return
             
-        with st.spinner("⏳ Processando sua solicitação..."):
+        with st.spinner("▪ Processando sua solicitação..."):
             dados = preparar_dados_formulario(st.session_state)
             erros = validar_formulario(dados)
             
@@ -1016,11 +1016,11 @@ def main():
             if erros:
                 st.session_state.form_data.update(dados)
                 st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                st.markdown("❌ **Por favor, corrija os seguintes campos:**")
+                st.markdown("✗ **Por favor, corrija os seguintes campos:**")
                 for erro in erros:
                     st.markdown(f"• {erro}")
                 st.markdown("</div>", unsafe_allow_html=True)
-                st.info("💡 **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente.")
+                st.info("▪ **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente.")
             else:
                 st.session_state.form_data = {}
                 
@@ -1044,11 +1044,11 @@ def main():
                         
                     else:
                         st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                        st.markdown("❌ **Erro ao transmitir mensagem. Tente novamente.**")
+                        st.markdown("✗ **Erro ao transmitir mensagem. Tente novamente.**")
                         st.markdown('</div>', unsafe_allow_html=True)
                         
                 except Exception as e:
-                    st.error(f"❌ Erro crítico: {str(e)}")
+                    st.error(f"✗ Erro crítico: {str(e)}")
 
 if __name__ == "__main__":
     main() 
