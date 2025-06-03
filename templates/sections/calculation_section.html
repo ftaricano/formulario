@@ -1,0 +1,36 @@
+<div style="background: linear-gradient(135deg, rgba(45, 55, 72, 0.05) 0%, rgba(26, 32, 44, 0.05) 100%);
+            border-radius: 16px; padding: 24px; margin: 20px 0;
+            border: 1px solid rgba(45, 55, 72, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h4 style="color: var(--primary-color); margin: 0; font-weight: 700; font-size: 1.2rem;">
+            ▪ Período de Vigência
+        </h4>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 400px; margin: 0 auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; 
+                    background: rgba(255, 255, 255, 0.6); border-radius: 8px; border-left: 4px solid var(--primary-color);">
+            <span style="font-weight: 600; color: var(--primary-color);">Data de Inclusão:</span>
+            <span style="font-weight: 500;">{{data_inclusao}}</span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; 
+                    background: rgba(255, 255, 255, 0.6); border-radius: 8px; border-left: 4px solid var(--primary-color);">
+            <span style="font-weight: 600; color: var(--primary-color);">Final da Vigência:</span>
+            <span style="font-weight: 500;">{{data_final}}</span>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; 
+                    background: rgba(255, 255, 255, 0.6); border-radius: 8px; border-left: 4px solid var(--success-color, #38ef7d);">
+            <span style="font-weight: 600; color: var(--success-color, #38ef7d);">Dias Restantes:</span>
+            <span style="font-weight: 600; color: var(--success-color, #38ef7d);">{{dias_restantes}} dias</span>
+        </div>
+    </div>
+</div>
+
+<div class="total-value-section-black">
+    <h3>Valor Total: {{valor_total}}</h3>
+    <p>Valor proporcional para o período selecionado</p>
+</div> 

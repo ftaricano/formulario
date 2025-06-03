@@ -1,27 +1,7 @@
 """
 Configurações do Sistema de Adesão de Seguro
 """
-import os
 from datetime import datetime
-
-# Tentar importar streamlit para usar secrets
-try:
-    import streamlit as st
-    USE_STREAMLIT_SECRETS = True
-except ImportError:
-    USE_STREAMLIT_SECRETS = False
-
-def get_config_value(key: str, default: str = "") -> str:
-    """
-    Busca configuração primeiro no st.secrets (Streamlit Cloud) 
-    depois nas variáveis de ambiente
-    """
-    if USE_STREAMLIT_SECRETS:
-        try:
-            return st.secrets.get(key, os.getenv(key, default))
-        except:
-            return os.getenv(key, default)
-    return os.getenv(key, default)
 
 # ==================== CONFIGURAÇÕES DOS PLANOS ====================
 
@@ -33,17 +13,6 @@ PLANOS_SEGURO = {
 
 # Data final de vigência fixa
 DATA_FINAL_VIGENCIA = datetime(2025, 12, 8)
-
-# ==================== CONFIGURAÇÕES DE EMAIL ====================
-
-EMAIL_CONFIG = {
-    "smtp_server": "smtp.office365.com",
-    "smtp_port": 587,
-    "email_remetente": os.getenv("EMAIL_REMETENTE", ""),
-    "senha_email": os.getenv("EMAIL_SENHA", ""),
-    "email_empresa": "informe@cpzseg.com.br",
-    "modo_teste": True
-}
 
 # ==================== CONFIGURAÇÕES DE API ====================
 

@@ -14,10 +14,5 @@ backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f8f9fa"
 textColor = "#1a202c"
 
-[client]
-caching = true
-
 [runner]
-magicEnabled = true
-installTracer = false
-fixMatplotlib = true 
+magicEnabled = true 

@@ -1,1067 +1,574 @@
+"""
+Formulário de Adesão - Seguro Incêndio Conteúdos
+Versão Otimizada
+"""
+
 import streamlit as st
-import streamlit.components.v1 as components
-import requests
-from datetime import datetime, timezone, timedelta
-import re
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import Dict, Optional, Tuple, List
+import sys
 import os
-from functools import lru_cache
-import base64
-import io
 
-try:
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail, Email, To, Content, Attachment, FileContent, FileName, FileType, Disposition
-    SENDGRID_AVAILABLE = True
-except ImportError:
-    SENDGRID_AVAILABLE = False
+# Adicionar diretório src ao path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-try:
-    from config import (
-        PLANOS_SEGURO, DATA_FINAL_VIGENCIA, EMAIL_CONFIG, API_URLS, 
-        TIMEOUT_CONFIG, REGEX_PATTERNS, APP_CONFIG, MENSAGENS, CAMPOS_OBRIGATORIOS
-    )
-except ImportError as e:
-    st.error(f"Erro ao importar configurações: {e}")
-    st.stop()
+# Importações dos módulos refatorados
+from src.models.formulario import FormularioSeguro
+from src.validators.form_validators import FormValidator
+from src.components.form_sections import (
+    FormSectionRenderer, EquipamentosSection, ApiSearchHandler
+)
+from src.utils.formatters import ValueFormatter, StringUtils, DateUtils
+from src.services.email_service import EmailService
 
-# Configuração da página deve ser a primeira chamada Streamlit
-try:
-    st.set_page_config(
-        page_title=APP_CONFIG["page_title"],
-        page_icon=APP_CONFIG["page_icon"],
-        layout=APP_CONFIG["layout"]
-    )
-except Exception as e:
-    st.error(f"Erro na configuração da página: {e}")
+# Importações do sistema original
+from config import APP_CONFIG, PLANOS_SEGURO, DATA_FINAL_VIGENCIA
+from datetime import datetime, timedelta
 
-def load_css():
-    try:
-        with open("styles.css", "r", encoding="utf-8") as f:
-            css_content = f.read()
-        st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("⚠ Arquivo styles.css não encontrado.")
-    except Exception as e:
-        st.warning(f"⚠ Erro ao carregar CSS: {e}")
+# Configuração da página
+st.set_page_config(
+    page_title=APP_CONFIG["page_title"],
+    page_icon=APP_CONFIG["page_icon"],
+    layout=APP_CONFIG["layout"]
+)
 
-load_css()
-
-def ocultar_cabecalho_streamlit():
-    st.markdown("""
-    <style>
-    div[data-testid="stHeader"] {
-        visibility: hidden !important;
-        height: 0 !important;
-        display: none !important;
-    }
-    div[data-testid="stHeaderActionElements"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    .stDeployButton,
-    div[data-testid="stDecoration"],
-    div[data-testid="stToolbar"],
-    div[data-testid="stSidebarUserInfo"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-ocultar_cabecalho_streamlit()
-
-def carregar_logo(width=None):
-    try:
-        logo_width = width if width is not None else 80
-        st.markdown(f"""
-        <div style="display: flex; justify-content: center; margin: 0 auto;">
-            <img src="data:image/png;base64,{get_logo_base64()}" 
-                 style="max-width: {logo_width}px; border-radius: 8px;" 
-                 alt="Logo CPZ">
-        </div>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning(f"⚠ Erro ao carregar logo: {e}")
-
-def get_logo_base64():
-    try:
-        with open(APP_CONFIG["logo_path"], "rb") as f:
-            return base64.b64encode(f.read()).decode()
-    except FileNotFoundError:
-        return ""
-    except Exception as e:
-        st.warning(f"⚠ Erro ao processar logo: {e}")
-        return ""
-
-def validar_cnpj(cnpj: str) -> bool:
-    if not cnpj:
-        return False
-    cnpj_limpo = re.sub(r'\D', '', cnpj)
-    return bool(re.match(REGEX_PATTERNS["cnpj"], cnpj_limpo))
-
-def validar_cpf(cpf: str) -> bool:
-    if not cpf:
-        return False
-    cpf_limpo = re.sub(r'\D', '', cpf)
-    return bool(re.match(REGEX_PATTERNS["cpf"], cpf_limpo))
-
-def validar_cep(cep: str) -> bool:
-    if not cep:
-        return False
-    cep_limpo = re.sub(r'\D', '', cep)
-    return bool(re.match(REGEX_PATTERNS["cep"], cep_limpo))
-
-def validar_email(email: str) -> bool:
-    if not email:
-        return False
-    return bool(re.match(REGEX_PATTERNS["email"], email.strip()))
-
-def validar_telefone(telefone: str) -> bool:
-    if not telefone:
-        return False
-    telefone_limpo = re.sub(r'\D', '', telefone)
-    return bool(re.match(REGEX_PATTERNS["telefone"], telefone_limpo))
-
-def limpar_string(texto: str) -> str:
-    if not texto:
-        return ""
-    return texto.strip()
-
-def formatar_cnpj(cnpj: str) -> str:
-    cnpj_limpo = re.sub(r'\D', '', cnpj)
-    if len(cnpj_limpo) == 14:
-        return f"{cnpj_limpo[:2]}.{cnpj_limpo[2:5]}.{cnpj_limpo[5:8]}/{cnpj_limpo[8:12]}-{cnpj_limpo[12:]}"
-    return cnpj
-
-def formatar_cpf(cpf: str) -> str:
-    cpf_limpo = re.sub(r'\D', '', cpf)
-    if len(cpf_limpo) == 11:
-        return f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:]}"
-    return cpf
-
-def formatar_cep(cep: str) -> str:
-    cep_limpo = re.sub(r'\D', '', cep)
-    if len(cep_limpo) == 8:
-        return f"{cep_limpo[:5]}-{cep_limpo[5:]}"
-    return cep
-
-def formatar_telefone(telefone: str) -> str:
-    telefone_limpo = re.sub(r'\D', '', telefone)
-    if len(telefone_limpo) == 11:
-        return f"({telefone_limpo[:2]}) {telefone_limpo[2:7]}-{telefone_limpo[7:]}"
-    elif len(telefone_limpo) == 10:
-        return f"({telefone_limpo[:2]}) {telefone_limpo[2:6]}-{telefone_limpo[6:]}"
-    return telefone
-
-def formatar_valor_real(valor: float) -> str:
-    try:
-        return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    except (ValueError, TypeError):
-        return "R$ 0,00"
-
-class SendGridEmailSender:
-    def __init__(self, api_key=None):
-        self.api_key = api_key or os.getenv('SENDGRID_API_KEY')
-        if not self.api_key:
-            raise ValueError("API Key do SendGrid não encontrada!")
-        self.sg = SendGridAPIClient(api_key=self.api_key)
+class FormularioApp:
+    """Classe principal da aplicação do formulário"""
     
-    def enviar_email_formulario(self, dados_formulario, email_destino="informe@cpzseg.com.br", arquivos=None):
+    def __init__(self):
+        self.formulario = None
+        
+    def inicializar(self):
+        """Inicializa a aplicação"""
+        self._carregar_css()
+        self._ocultar_cabecalho()
+        
+    def _carregar_css(self):
+        """Carrega arquivo CSS personalizado"""
         try:
-            from_email = Email("noreply@cpzseg.com.br", "Grupo CPZ - Formulários")
-            to_email = To(email_destino)
-            subject = f"Nova Solicitação - Seguro Incêndio - {dados_formulario.get('nome_completo', 'N/A')}"
-            html_content = self._gerar_html_email(dados_formulario, arquivos)
-            content = Content("text/html", html_content)
-            mail = Mail(from_email, to_email, subject, content)
-            
-            # Adicionar anexos se existirem
-            if arquivos:
-                for arquivo in arquivos:
-                    try:
-                        # Converter arquivo para base64
-                        file_content = base64.b64encode(arquivo['content']).decode()
-                        attachment = Attachment(
-                            FileContent(file_content),
-                            FileName(arquivo['name']),
-                            FileType(arquivo['type']),
-                            Disposition('attachment')
-                        )
-                        mail.add_attachment(attachment)
-                    except Exception as e:
-                        st.warning(f"⚠ Erro ao anexar arquivo {arquivo['name']}: {str(e)}")
-            
-            response = self.sg.client.mail.send.post(request_body=mail.get())
-            
-            if response.status_code == 202:
-                return True, "Email enviado com sucesso!"
-            else:
-                return False, f"Erro ao enviar email. Status: {response.status_code}"
-        except Exception as e:
-            return False, f"Erro ao enviar email: {str(e)}"
-    
-    def _gerar_html_email(self, dados, arquivos=None):
-        plano_nome = dados.get('plano_selecionado', '').split('\n')[0].replace(' -', '') if dados.get('plano_selecionado') else 'Não selecionado'
-        
-        # Seção de arquivos anexados
-        arquivos_html = ""
-        if arquivos:
-            arquivos_html = """
-                <h3>▪ Arquivos Anexados</h3>
-                <ul>
-            """
-            for arquivo in arquivos:
-                size_mb = arquivo['size'] / (1024 * 1024)
-                arquivos_html += f"<li><strong>{arquivo['name']}</strong> ({size_mb:.2f} MB)</li>"
-            arquivos_html += "</ul>"
-        
-        html = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #182c4b;">▪ Nova Solicitação - Seguro Incêndio</h2>
-                
-                <h3>▪ Dados Pessoais</h3>
-                <p><strong>Nome:</strong> {dados.get('nome_completo', 'N/A')}</p>
-                <p><strong>CPF:</strong> {formatar_cpf(dados.get('cpf', ''))}</p>
-                <p><strong>Email:</strong> {dados.get('email', 'N/A')}</p>
-                <p><strong>Telefone:</strong> {formatar_telefone(dados.get('telefone', ''))}</p>
-                <p><strong>CNPJ:</strong> {formatar_cnpj(dados.get('cnpj', ''))}</p>
-                <p><strong>Razão Social:</strong> {dados.get('razao_social', 'N/A')}</p>
-                
-                <h3>▪ Endereço</h3>
-                <p><strong>CEP:</strong> {formatar_cep(dados.get('cep', ''))}</p>
-                <p><strong>Endereço:</strong> {dados.get('logradouro', 'N/A')}, {dados.get('numero', 'N/A')}</p>
-                <p><strong>Bairro:</strong> {dados.get('bairro', 'N/A')}</p>
-                <p><strong>Cidade/Estado:</strong> {dados.get('cidade', 'N/A')} - {dados.get('estado', 'N/A')}</p>
-                
-                <h3>▪ Plano</h3>
-                <p><strong>Plano:</strong> {plano_nome}</p>
-                <p><strong>Prêmio:</strong> {formatar_valor_real(dados.get('premio_pro_rata', 0))}</p>
-                <p><strong>Dias:</strong> {dados.get('dias_restantes', 'N/A')} dias</p>
-                
-                {arquivos_html}
-                
-                <p style="margin-top: 20px; color: #666;">
-                    Email gerado em {datetime.now(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y às %H:%M')}
-                </p>
-            </div>
-        </body>
-        </html>
-        """
-        return html
-
-def configurar_sendgrid_streamlit():
-    api_key_from_secrets = None
-    email_mode = "SendGrid"
-    
-    try:
-        if hasattr(st, 'secrets') and 'sendgrid' in st.secrets:
-            api_key_from_secrets = st.secrets["sendgrid"].get("api_key", "")
-            if api_key_from_secrets and api_key_from_secrets != "SG.sua_api_key_aqui":
-                try:
-                    sender = SendGridEmailSender(api_key_from_secrets)
-                    return sender, True, email_mode
-                except Exception as e:
-                    st.warning(f"⚠ Problema na configuração do SendGrid: {str(e)}")
-                    return None, False, "Teste (sem envio)"
-    except Exception:
-        pass
-    
-    api_key_env = os.getenv('SENDGRID_API_KEY')
-    if api_key_env:
-        try:
-            sender = SendGridEmailSender(api_key_env)
-            return sender, True, email_mode
-        except Exception:
-            pass
-    
-    st.info("▪ **Modo de teste ativo** - Configure o SendGrid para envio real")
-    return None, False, "Teste (sem envio)"
-
-@lru_cache(maxsize=100)
-def buscar_cnpj(cnpj: str) -> Optional[str]:
-    cnpj_limpo = re.sub(r'\D', '', cnpj)
-    
-    if not validar_cnpj(cnpj_limpo):
-        st.error(MENSAGENS["cnpj_invalido"])
-        return None
-    
-    url = f"{API_URLS['receita_ws']}{cnpj_limpo}"
-    
-    for tentativa in range(TIMEOUT_CONFIG["max_retries"]):
-        try:
-            response = requests.get(url, timeout=TIMEOUT_CONFIG["api_timeout"])
-            response.raise_for_status()
-            data = response.json()
-            
-            if data.get('status') == 'OK':
-                return data.get('nome', '')
-            else:
-                st.error(f"✗ Erro na consulta CNPJ: {data.get('message', 'CNPJ inválido')}")
-                return None
-        except requests.exceptions.Timeout:
-            if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(MENSAGENS["timeout_cnpj"])
-            continue
-        except Exception as e:
-            if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(f"✗ Erro na consulta do CNPJ: {str(e)}")
-            continue
-    
-        return None
-
-@lru_cache(maxsize=100)
-def buscar_cep(cep: str) -> Optional[Dict]:
-    cep_limpo = re.sub(r'\D', '', cep)
-    
-    if not validar_cep(cep_limpo):
-        st.error(MENSAGENS["cep_invalido"])
-        return None
-    
-    url = f"{API_URLS['via_cep']}{cep_limpo}/json/"
-    
-    for tentativa in range(TIMEOUT_CONFIG["max_retries"]):
-        try:
-            response = requests.get(url, timeout=TIMEOUT_CONFIG["api_timeout"])
-            response.raise_for_status()
-            data = response.json()
-            
-            if 'erro' not in data:
-                return {
-                    'logradouro': data.get('logradouro', ''),
-                    'bairro': data.get('bairro', ''),
-                    'cidade': data.get('localidade', ''),
-                    'estado': data.get('uf', '')
-                }
-            else:
-                st.error(MENSAGENS["cep_nao_encontrado"])
-                return None
-        except requests.exceptions.Timeout:
-            if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(MENSAGENS["timeout_cep"])
-            continue
-        except Exception as e:
-            if tentativa == TIMEOUT_CONFIG["max_retries"] - 1:
-                st.error(f"✗ Erro na consulta do CEP: {str(e)}")
-            continue
-    
-    return None
-
-def calcular_pro_rata(plano: str, data_inclusao: datetime) -> Tuple[int, float]:
-    data_inclusao_naive = data_inclusao.replace(tzinfo=None)
-    dias_restantes = (DATA_FINAL_VIGENCIA - data_inclusao_naive).days + 1
-    preco_anual = PLANOS_SEGURO[plano]
-    premio_pro_rata = round((preco_anual / 365) * dias_restantes, 2)
-    return dias_restantes, premio_pro_rata
-
-def validar_arquivos(arquivos_uploaded) -> Tuple[bool, List[str], List[Dict]]:
-    """Valida arquivos uploaded e retorna status, erros e arquivos processados"""
-    if not arquivos_uploaded:
-        return True, [], []
-    
-    erros = []
-    arquivos_validos = []
-    
-    # Configurações de validação
-    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB por arquivo
-    MAX_TOTAL_SIZE = 25 * 1024 * 1024  # 25MB total
-    TIPOS_PERMITIDOS = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'application/pdf', 
-        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'text/plain'
-    ]
-    
-    total_size = 0
-    
-    for arquivo in arquivos_uploaded:
-        # Verificar tamanho individual
-        if arquivo.size > MAX_FILE_SIZE:
-            erros.append(f"Arquivo '{arquivo.name}' excede 10MB")
-            continue
-            
-        # Verificar tipo
-        if arquivo.type not in TIPOS_PERMITIDOS:
-            erros.append(f"Tipo de arquivo não permitido: '{arquivo.name}' ({arquivo.type})")
-            continue
-            
-        total_size += arquivo.size
-        
-        # Processar arquivo válido
-        arquivo_dict = {
-            'name': arquivo.name,
-            'type': arquivo.type,
-            'size': arquivo.size,
-            'content': arquivo.read()
-        }
-        arquivos_validos.append(arquivo_dict)
-    
-    # Verificar tamanho total
-    if total_size > MAX_TOTAL_SIZE:
-        erros.append(f"Tamanho total dos arquivos excede 25MB ({total_size/(1024*1024):.1f}MB)")
-        return False, erros, []
-    
-    return len(erros) == 0, erros, arquivos_validos
-
-def enviar_email_confirmacao(dados: Dict, email_sender=None, email_mode="Teste (sem envio)", arquivos=None) -> bool:
-    try:
-        if email_mode == "Teste (sem envio)":
-            st.info("▪ **Modo de teste ativado** - Email não será enviado")
-            if arquivos:
-                st.info(f"▪ {len(arquivos)} arquivo(s) processado(s) com sucesso (modo teste)")
-            st.success("✓ Formulário processado com sucesso!")
-            return True
-        
-        elif email_mode == "SendGrid" and email_sender:
-            try:
-                email_destino = "informe@cpzseg.com.br"
-                sucesso_empresa, msg_empresa = email_sender.enviar_email_formulario(dados, email_destino, arquivos)
-                
-                if sucesso_empresa:
-                    st.success(f"✓ Mensagem transmitida para: {email_destino}")
-                    if arquivos:
-                        st.success(f"▪ {len(arquivos)} arquivo(s) anexado(s) com sucesso")
-                    return True
-                else:
-                    st.error(f"✗ Erro ao transmitir mensagem: {msg_empresa}")
-                    return False
-            except Exception as e:
-                st.error(f"✗ Erro no SendGrid: {str(e)}")
-                return False
-        
-        else:
-            st.error("✗ Configuração de email inválida")
-            return False
-            
-    except Exception as e:
-        st.error(f"✗ Erro inesperado: {str(e)}")
-        return False
-
-def validar_formulario(dados: Dict) -> list:
-    erros = []
-    
-    for campo, nome in CAMPOS_OBRIGATORIOS.items():
-        valor = dados.get(campo, '').strip()
-        if not valor:
-            erros.append(f"{nome} é obrigatório")
-    
-    email = dados.get('email', '').strip()
-    if email and not validar_email(email):
-        erros.append("E-mail inválido")
-    
-    telefone = dados.get('telefone', '').strip()
-    if telefone and not validar_telefone(telefone):
-        erros.append("Telefone deve ter 10 ou 11 dígitos")
-    
-    cpf = dados.get('cpf', '').strip()
-    if cpf and not validar_cpf(cpf):
-        erros.append("CPF deve estar no formato 000.000.000-00")
-    
-    cnpj = dados.get('cnpj', '').strip()
-    if cnpj and not validar_cnpj(cnpj):
-        erros.append("CNPJ deve estar no formato 00.000.000/0000-00")
-    
-    cep = dados.get('cep', '').strip()
-    if cep and not validar_cep(cep):
-        erros.append("CEP deve estar no formato 00000-000")
-    
-    nome = dados.get('nome_completo', '').strip()
-    if nome and len(nome.split()) < 2:
-        erros.append("Nome completo deve ter pelo menos nome e sobrenome")
-    
-    return erros
-
-def preparar_dados_formulario(session_state: Dict) -> Dict:
-    return {
-        'nome_completo': limpar_string(session_state.get('nome_completo', '')),
-        'cpf': limpar_string(session_state.get('cpf', '')),
-        'email': limpar_string(session_state.get('email', '')),
-        'telefone': limpar_string(session_state.get('telefone', '')),
-        'cnpj': limpar_string(session_state.get('cnpj', '')),
-        'razao_social': limpar_string(session_state.get('razao_social', '')),
-        'cep': limpar_string(session_state.get('cep', '')),
-        'logradouro': limpar_string(session_state.get('logradouro', '')),
-        'numero': limpar_string(session_state.get('numero', '')),
-        'complemento': limpar_string(session_state.get('complemento', '')),
-        'bairro': limpar_string(session_state.get('bairro', '')),
-        'cidade': limpar_string(session_state.get('cidade', '')),
-        'estado': limpar_string(session_state.get('estado', '')),
-        'plano_selecionado': session_state.get('plano_radio', '')
-    }
-
-def get_field_value(field_name: str) -> str:
-    current_value = st.session_state.get(field_name, '')
-    if current_value:
-        return current_value
-    
-    preserved_value = st.session_state.form_data.get(field_name, '')
-    if preserved_value:
-        return preserved_value
-    
-    return ''
-
-def render_header():
-    st.markdown("""
-    <div class="header-container">
-        <div class="header-content">
-    """, unsafe_allow_html=True)
-    
-    try:
-        carregar_logo(width=250)
-    except Exception:
-        st.markdown("**📋 Formulário de Adesão**")
-    
-    st.markdown("""
-        <div class="header-titles">
-            <h1 class="header-main-title">Formulário de Adesão</h1>
-            <h2 class="header-subtitle">Seguro Incêndio Conteúdos - Cessionários</h2>
-            <p class="header-company"><strong>ORLA RIO</strong></p>
-        </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_coberturas_table():
-    st.markdown("""
-    <div style="text-align: center; margin: 2rem 0;">
-        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">
-            ■ Detalhamento das Coberturas
-        </h3>
-        <p style="color: var(--text-secondary); font-size: 1rem; margin-bottom: 2rem;">
-            Confira os valores de cobertura e franquias para cada plano disponível
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="coverage-table-desktop">
-        <div style="overflow-x: auto; margin: 1.5rem 0;">
-            <table class="coverage-table">
-                <thead>
-                    <tr>
-                        <th>▪ Coberturas</th>
-                        <th>◆ Opção 1<br><span style="font-size: 0.9em; font-weight: 500;">R$ 250.000</span></th>
-                        <th>◆ Opção 2<br><span style="font-size: 0.9em; font-weight: 500;">R$ 400.000</span></th>
-                        <th>◆ Opção 3<br><span style="font-size: 0.9em; font-weight: 500;">R$ 700.000</span></th>
-                        <th>▪ Franquia</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Incêndio, Raio e Explosão</td>
-                        <td>R$ 250.000</td>
-                        <td>R$ 400.000</td>
-                        <td>R$ 700.000</td>
-                        <td class="franchise">R$ 30.000</td>
-                    </tr>
-                    <tr>
-                        <td>Alagamento</td>
-                        <td>R$ 50.000</td>
-                        <td>R$ 100.000</td>
-                        <td>R$ 150.000</td>
-                        <td class="franchise">R$ 15.000</td>
-                    </tr>
-                    <tr>
-                        <td>Danos Elétricos</td>
-                        <td>R$ 20.000</td>
-                        <td>R$ 50.000</td>
-                        <td>R$ 100.000</td>
-                        <td class="franchise">R$ 3.000</td>
-                    </tr>
-                    <tr>
-                        <td>Pequenas Obras</td>
-                        <td>R$ 50.000</td>
-                        <td>R$ 100.000</td>
-                        <td>R$ 150.000</td>
-                        <td class="franchise">R$ 5.000</td>
-                    </tr>
-                    <tr>
-                        <td>Perda/Pgto Aluguel (6m)</td>
-                        <td>R$ 20.000</td>
-                        <td>R$ 30.000</td>
-                        <td>R$ 40.000</td>
-                        <td class="no-franchise">Não Há</td>
-                    </tr>
-                    <tr>
-                        <td>Vidros</td>
-                        <td>R$ 20.000</td>
-                        <td>R$ 50.000</td>
-                        <td>R$ 100.000</td>
-                        <td class="franchise">R$ 3.000</td>
-                    </tr>
-                    <tr>
-                        <td>Tumultos</td>
-                        <td>R$ 100.000</td>
-                        <td>R$ 150.000</td>
-                        <td>R$ 200.000</td>
-                        <td class="franchise">R$ 5.000</td>
-                    </tr>
-                    <tr>
-                        <td>Vendaval</td>
-                        <td>R$ 100.000</td>
-                        <td>R$ 150.000</td>
-                        <td>R$ 200.000</td>
-                        <td class="franchise">R$ 10.000</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_responsive_field(label, field_name, field_type="text", help_text="", placeholder="", search_button=False, col_ratio=None):
-    if search_button:
-        col1, col2 = st.columns([5, 1])
-        
-        with col1:
-            value = st.text_input(
-                label,
-                value=get_field_value(field_name),
-                help=help_text,
-                placeholder=placeholder,
-                key=field_name
-            )
-        
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            button_key = f"buscar_{field_name}"
-            button_pressed = st.button("🔍", key=button_key, use_container_width=True)
-        
-        return value, button_pressed
-    else:
-        return st.text_input(
-            label,
-            value=get_field_value(field_name),
-            help=help_text,
-            placeholder=placeholder,
-            key=field_name
-        )
-
-def render_file_upload_section():
-    """Renderiza a seção de upload de arquivos"""
-    st.markdown("")
-    st.markdown('<div class="section-title">▪ Anexar Documentos (Opcional)</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="upload-info-section">
-        <p>
-            <strong>■ Tipos de arquivo aceitos:</strong><br>
-            • <strong>Imagens:</strong> JPG, PNG, GIF, WebP<br>
-            • <strong>Documentos:</strong> PDF, Word, Excel<br>
-            • <strong>Texto:</strong> TXT<br><br>
-            <strong>■ Limites:</strong> Máx. 10MB por arquivo | Máx. 25MB total
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    arquivos_uploaded = st.file_uploader(
-        "▪ Selecione os arquivos para anexar",
-        type=['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'],
-        accept_multiple_files=True,
-        help="Arraste e solte os arquivos aqui ou clique para selecionar. Use Ctrl (Windows) ou Cmd (Mac) + clique para seleção múltipla.",
-        key="arquivos_upload"
-    )
-    
-    # Mostrar informações dos arquivos selecionados
-    if arquivos_uploaded:
-        total_size = sum(arquivo.size for arquivo in arquivos_uploaded)
-        total_size_mb = total_size / (1024 * 1024)
-        
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(72, 187, 120, 0.1) 0%, rgba(56, 239, 125, 0.1) 100%); 
-                    padding: 16px; border-radius: 12px; 
-                    border-left: 4px solid #38ef7d; margin: 15px 0;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);">
-            <p style="margin: 0; color: #2d3748; font-size: 14px; font-weight: 500;">
-                <strong>✓ {len(arquivos_uploaded)} arquivo(s) selecionado(s)</strong><br>
-                <strong>■ Tamanho total:</strong> {total_size_mb:.2f} MB / 25 MB
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Mostrar lista de arquivos com detalhes
-        st.markdown("**▪ Arquivos selecionados:**")
-        for i, arquivo in enumerate(arquivos_uploaded, 1):
-            size_mb = arquivo.size / (1024 * 1024)
-            file_icon = "▪" if arquivo.type.startswith('image/') else "▫" if arquivo.type == 'application/pdf' else "▪"
-            st.markdown(f"**{i}.** {file_icon} `{arquivo.name}` - {size_mb:.2f} MB")
-    
-    return arquivos_uploaded
-
-def exibir_popup_sucesso(nome_cliente, premio_calculado, email_mode="Teste (sem envio)", arquivos_count=0):
-    """Exibe popup de sucesso após envio do formulário"""
-    
-    # Extrair primeiro nome
-    primeiro_nome = nome_cliente.split()[0] if nome_cliente and ' ' in nome_cliente else nome_cliente
-    
-    # Mensagem principal baseada no modo
-    if email_mode == "Teste (sem envio)":
-        st.toast("✓ Formulário processado com sucesso!", icon="✅")
-        st.success(f"### ✓ Obrigado, {primeiro_nome}!")
-        mensagem_info = "**■ Seus dados foram processados**\n\n▪ Modo de teste ativo - Configure o SendGrid para envio real"
-        if arquivos_count > 0:
-            mensagem_info += f"\n\n▪ {arquivos_count} arquivo(s) processado(s)"
-        st.info(mensagem_info)
-    else:
-        st.toast("✓ Solicitação recebida com sucesso!", icon="✅")
-        st.success(f"### ✓ Obrigado, {primeiro_nome}!")
-        mensagem_info = "**■ Seus dados foram enviados para nossa equipe**\n\n▪ Nossa equipe entrará em contato em até 24 horas"
-        if arquivos_count > 0:
-            mensagem_info += f"\n\n▪ {arquivos_count} arquivo(s) anexado(s) com sucesso"
-        st.info(mensagem_info)
-    
-    # Informações do valor calculado
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, rgba(85, 114, 156, 0.05) 0%, rgba(74, 107, 138, 0.05) 100%);
-                border: 1px solid rgba(85, 114, 156, 0.2);
-                border-radius: 16px; padding: 20px; margin: 20px 0;
-                text-align: center; backdrop-filter: blur(10px);">
-        <h4 style="margin: 0 0 10px 0; color: var(--primary-color); font-weight: 700;">
-            ▪ Valor Calculado
-        </h4>
-        <p style="margin: 0; font-size: 1.5rem; font-weight: 800; 
-                  background: var(--primary-gradient); -webkit-background-clip: text; 
-                  -webkit-text-fill-color: transparent; background-clip: text;">
-            {formatar_valor_real(premio_calculado)}
-        </p>
-        <p style="margin: 5px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
-            Valor proporcional até 31/12/2024
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Botões de ação
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("↻ Novo Formulário", use_container_width=True, type="secondary"):
-            # Limpar todos os dados do session_state relacionados ao formulário
-            for key in list(st.session_state.keys()):
-                if key.startswith(('cnpj', 'razao_social', 'cep', 'logradouro', 'numero', 
-                                  'complemento', 'bairro', 'cidade', 'estado', 'cpf', 
-                                  'nome_completo', 'email', 'telefone', 'plano_radio', 
-                                  'formulario_enviado', 'form_data')):
-                    del st.session_state[key]
-            st.rerun()
-    
-    with col2:
-        if st.button("▪ Ver Cotação", use_container_width=True, type="primary"):
-            st.info("■ **Resumo da Cotação:**\n\nEm breve você receberá todos os detalhes por email!")
-
-def main():
-    render_header()
-    
-    email_sender, email_ready, email_mode = configurar_sendgrid_streamlit()
-    
-    if 'form_data' not in st.session_state:
-        st.session_state.form_data = {}
-    
-    if st.session_state.get('show_errors', False) and st.session_state.get('form_errors', []):
-        st.markdown('<div class="error-message">', unsafe_allow_html=True)
-        st.markdown("✗ **Erros encontrados no formulário anterior:**")
-        for erro in st.session_state.form_errors:
-            st.markdown(f"• {erro}")
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        st.info("▪ **Seus dados foram preservados!** Corrija os campos destacados abaixo.")
-        
-        del st.session_state.form_errors
-        del st.session_state.show_errors
-    
-    plano_opcoes_disponiveis = []
-    for plano, preco in PLANOS_SEGURO.items():
-        plano_opcoes_disponiveis.append(f"{plano} -\n{formatar_valor_real(preco)}/ano")
-    
-    if 'plano_radio' not in st.session_state and plano_opcoes_disponiveis:
-        st.session_state['plano_radio'] = plano_opcoes_disponiveis[0]
-    
-    # ==================== SEÇÃO 1: IDENTIFICAÇÃO DO QUIOSQUE ====================
-    st.markdown("""
-    <div class="form-section">
-        <div class="section-title">▪ Identificação do Quiosque</div>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            Informe os dados do estabelecimento que será segurado
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    cnpj, buscar_cnpj_btn = render_responsive_field(
-        label="▪ CNPJ *",
-        field_name="cnpj",
-        help_text="Digite o CNPJ (14 dígitos)",
-        placeholder="00.000.000/0000-00",
-        search_button=True
-    )
-    
-    razao_social = st.text_input(
-        "▪ Razão Social",
-        value=get_field_value('razao_social'),
-        help="Preenchido automaticamente após buscar CNPJ",
-        key="razao_social"
-    )
-    
-    cep, buscar_cep_btn = render_responsive_field(
-        label="▪ CEP *",
-        field_name="cep",
-        help_text="Digite o CEP no formato 00000-000",
-        placeholder="00000-000",
-        search_button=True
-    )
-    
-    logradouro = st.text_input(
-        "▪ Logradouro *",
-        value=get_field_value('logradouro'),
-        help="Digite o endereço ou use a busca automática do CEP",
-        key="logradouro"
-    )
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        numero = st.text_input("▪ Número *", value=get_field_value('numero'), key="numero")
-    with col2:
-        complemento = st.text_input("▪ Complemento", value=get_field_value('complemento'), key="complemento")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        bairro = st.text_input("▪ Bairro *", value=get_field_value('bairro'), key="bairro")
-    with col2:
-        cidade = st.text_input("▪ Cidade *", value=get_field_value('cidade'), key="cidade")
-    
-    estado = st.text_input("▪ Estado *", value=get_field_value('estado'), key="estado")
-    
-    # ==================== SEÇÃO 2: IDENTIFICAÇÃO DO RESPONSÁVEL ====================
-    st.markdown("""
-    <div class="form-section">
-        <div class="section-title">▪ Identificação do Responsável</div>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            Dados da pessoa responsável pelo seguro
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    cpf = st.text_input("▪ CPF *", value=get_field_value('cpf'), placeholder="000.000.000-00", key="cpf")
-    nome_completo = st.text_input("▪ Nome Completo *", value=get_field_value('nome_completo'), key="nome_completo")
-    email = st.text_input("▪ E-mail *", value=get_field_value('email'), key="email")
-    telefone = st.text_input("▪ Telefone *", value=get_field_value('telefone'), placeholder="(11) 99999-9999", key="telefone")
-    
-    # ==================== SEÇÃO 3: UPLOAD DE ARQUIVOS ====================
-    st.markdown("""
-    <div class="form-section">
-    """, unsafe_allow_html=True)
-    
-    arquivos_uploaded = render_file_upload_section()
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # ==================== SEÇÃO 4: PLANOS DE SEGURO ====================
-    st.markdown("""
-    <div class="form-section">
-        <div class="section-title">▪ Planos de Seguro</div>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            Escolha o plano que melhor atende às suas necessidades
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    render_coberturas_table()
-    
-    # ==================== BUSCA AUTOMÁTICA ====================
-    if buscar_cnpj_btn and cnpj:
-        if validar_cnpj(cnpj):
-            with st.spinner("▪ Buscando dados do CNPJ..."):
-                razao_social_encontrada = buscar_cnpj(cnpj)
-                if razao_social_encontrada:
-                    st.session_state.form_data['razao_social'] = razao_social_encontrada
-                    st.success(f"✓ CNPJ encontrado: {razao_social_encontrada}")
-                    st.rerun()
-                else:
-                    st.warning("⚠ CNPJ não encontrado na base de dados")
-        else:
-            st.error("✗ CNPJ deve estar no formato 00.000.000/0000-00")
-    
-    if buscar_cep_btn and cep:
-        if validar_cep(cep):
-            with st.spinner("▪ Buscando endereço..."):
-                endereco = buscar_cep(cep)
-                if endereco:
-                    st.session_state.form_data.update(endereco)
-                    st.success("✓ Endereço encontrado e preenchido automaticamente")
-                    st.rerun()
-                else:
-                    st.warning("⚠ CEP não encontrado")
-        else:
-            st.error("✗ CEP deve estar no formato 00000-000")
-
-    # ==================== SEÇÃO 5: SELEÇÃO DO PLANO ====================
-    st.markdown("""
-    <div class="form-section">
-        <div class="section-title">▪ Seleção do Plano</div>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
-            Selecione uma das opções de cobertura disponíveis
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    plano_opcoes = plano_opcoes_disponiveis
-    default_index = 0
-    if st.session_state.form_data.get('plano'):
-        try:
-            default_index = list(PLANOS_SEGURO.keys()).index(st.session_state.form_data.get('plano'))
-        except ValueError:
-            default_index = 0
-    
-    plano_selecionado = st.radio(
-        "Plano",
-        options=plano_opcoes,
-        index=default_index,
-        key="plano_radio",
-        label_visibility="collapsed",
-        horizontal=True
-    )
-    
-    # ==================== CÁLCULO DE VALORES ====================
-    if plano_selecionado:
-        plano_nome = plano_selecionado.split('\n')[0].replace(' -', '')
-        preco_anual = PLANOS_SEGURO[plano_nome]
-        
-        tz_sao_paulo = timezone(timedelta(hours=-3))
-        data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
-        
-        dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
-        
+            with open("styles.css", "r", encoding="utf-8") as f:
+                css_content = f.read()
+            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+        except FileNotFoundError:
+            st.warning("⚠ Arquivo styles.css não encontrado.")
+    
+    def _ocultar_cabecalho(self):
+        """Oculta elementos do cabeçalho padrão do Streamlit"""
         st.markdown("""
-        <div style="background: linear-gradient(135deg, rgba(85, 114, 156, 0.05) 0%, rgba(74, 107, 138, 0.05) 100%);
-                    border-radius: 16px; padding: 20px; margin: 20px 0;
-                    border: 1px solid rgba(85, 114, 156, 0.1);">
+        <style>
+        div[data-testid="stHeader"] {
+            visibility: hidden !important;
+            height: 0 !important;
+            display: none !important;
+        }
+        </style>
         """, unsafe_allow_html=True)
+    
+    def renderizar_cabecalho(self):
+        """Renderiza cabeçalho da aplicação"""
+        # Navigation bar com logo
+        st.markdown("""
+        <div class="navbar-container">
+            <div class="navbar-content">
+                <div class="navbar-logo">
+                    <img src="data:image/png;base64,{}" alt="Logo" class="navbar-logo-img">
+                </div>
+            </div>
+        </div>
+        """.format(self._get_logo_base64()), unsafe_allow_html=True)
+        
+        # Header estilizado principal
+        st.markdown("""
+        <div class="header-container">
+            <div class="header-content">
+                <div class="header-titles">
+                    <h1 class="header-main-title">Formulário de Adesão</h1>
+                    <h2 class="header-subtitle">Seguro Incêndio Conteúdos - Cessionários</h2>
+                    <p class="header-company"><strong>ORLA RIO</strong></p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    def _get_logo_base64(self):
+        """Converte logo para base64"""
+        import base64
+        try:
+            with open("logo.png", "rb") as f:
+                return base64.b64encode(f.read()).decode()
+        except FileNotFoundError:
+            return ""
+    
+    def renderizar_identificacao_quiosque(self):
+        """Renderiza seção de identificação do quiosque"""
+        FormSectionRenderer.render_section_header(
+            "▪ Identificação do Quiosque",
+            "Informe os dados do estabelecimento que será segurado"
+        )
+        
+        # CNPJ com busca
+        cnpj, buscar_cnpj_btn = FormSectionRenderer.render_field_with_search(
+            label="▪ CNPJ *",
+            field_name="cnpj",
+            help_text="Digite o CNPJ (14 dígitos)",
+            placeholder="00.000.000/0000-00"
+        )
+        
+        # Razão social (preenchida automaticamente)
+        razao_social = st.text_input(
+            "▪ Razão Social",
+            value=st.session_state.get('razao_social_busca', ''),
+            help="Preenchido automaticamente após buscar CNPJ",
+            key="razao_social"
+        )
+        
+        # CEP com busca
+        cep, buscar_cep_btn = FormSectionRenderer.render_field_with_search(
+            label="▪ CEP *",
+            field_name="cep",
+            help_text="Digite o CEP no formato 00000-000",
+            placeholder="00000-000"
+        )
+        
+        # Campos de endereço
+        logradouro = st.text_input(
+            "▪ Logradouro *", 
+            value=st.session_state.get('logradouro_busca', ''),
+            key="logradouro"
+        )
         
         col1, col2 = st.columns(2)
-        
         with col1:
-            st.markdown("""
-            <div style="text-align: center;">
-                <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
-                    ▪ Período de Vigência
-                </h4>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown(f"• **Data de Inclusão:** {data_inclusao.strftime('%d/%m/%Y')}")
-            st.markdown(f"• **Final da Vigência:** {DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}")
-            st.markdown(f"• **Dias Restantes:** {dias_restantes} dias")
-            
+            numero = st.text_input("▪ Número *", key="numero")
         with col2:
-            st.markdown("""
-            <div style="text-align: center;">
-                <h4 style="color: var(--primary-color); margin-bottom: 15px; font-weight: 700;">
-                    ▪ Memória de Cálculo
-                </h4>
+            complemento = st.text_input("▪ Complemento", key="complemento")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            bairro = st.text_input(
+                "▪ Bairro *", 
+                value=st.session_state.get('bairro_busca', ''),
+                key="bairro"
+            )
+        with col2:
+            cidade = st.text_input(
+                "▪ Cidade *", 
+                value=st.session_state.get('cidade_busca', ''),
+                key="cidade"
+            )
+        
+        estado = st.text_input(
+            "▪ Estado *", 
+            value=st.session_state.get('estado_busca', ''),
+            key="estado"
+        )
+        
+        # Handlers para buscas automáticas
+        ApiSearchHandler.handle_cnpj_search(cnpj, buscar_cnpj_btn)
+        ApiSearchHandler.handle_cep_search(cep, buscar_cep_btn)
+    
+    def renderizar_identificacao_responsavel(self):
+        """Renderiza seção de identificação do responsável"""
+        FormSectionRenderer.render_section_header(
+            "▪ Identificação do Responsável",
+            "Dados da pessoa responsável pelo seguro"
+        )
+        
+        cpf = st.text_input("▪ CPF *", placeholder="000.000.000-00", key="cpf")
+        nome_completo = st.text_input("▪ Nome Completo *", key="nome_completo")
+        email = st.text_input("▪ E-mail *", key="email")
+        telefone = st.text_input("▪ Telefone *", placeholder="(11) 99999-9999", key="telefone")
+    
+    def renderizar_selecao_plano(self):
+        """Renderiza seção de seleção de planos"""
+        FormSectionRenderer.render_section_header(
+            "▪ Seleção do Plano",
+            "Escolha uma das opções de cobertura disponíveis"
+        )
+        
+        # Criar opções formatadas
+        plano_opcoes = []
+        for plano, preco in PLANOS_SEGURO.items():
+            plano_opcoes.append(f"{plano} -\n{ValueFormatter.formatar_valor_real(preco)}/ano")
+        
+        plano_selecionado = st.radio(
+            "Plano",
+            options=plano_opcoes,
+            key="plano_radio",
+            label_visibility="collapsed",
+            horizontal=True
+        )
+        
+        return plano_selecionado
+    
+    def renderizar_calculo_vigencia(self, plano_selecionado: str):
+        """Renderiza cálculo de vigência e valores"""
+        if plano_selecionado:
+            plano_nome = plano_selecionado.split('\n')[0].replace(' -', '')
+            preco_anual = PLANOS_SEGURO[plano_nome]
+            
+            # Calcular pro rata usando próximo dia útil (considerando feriados)
+            data_inclusao = DateUtils.obter_proximo_dia_util()
+            dias_restantes = (DATA_FINAL_VIGENCIA - data_inclusao.replace(tzinfo=None)).days + 1
+            premio_pro_rata = round((preco_anual / 365) * dias_restantes, 2)
+            
+            # Verificar se a data de inclusão é diferente de amanhã (indicando que pulou feriado/fim de semana)
+            amanha = datetime.now() + timedelta(days=1)
+            observacao = ""
+            if data_inclusao.date() != amanha.date():
+                observacao = "* Data ajustada para próximo dia útil"
+            
+            # Quadro resumo da vigência centralizado
+            st.markdown(f"""
+            <div style="display: flex; justify-content: center; margin: 15px 0;">
+                <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); border-radius: 12px; padding: 20px; max-width: 800px; width: 100%; color: white; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(26, 26, 26, 0.4); position: relative;">
+                    <h3 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1.1em; text-align: center; position: relative; z-index: 2;">📅 Período de Vigência</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: center; position: relative; z-index: 2;">
+                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Data de Inclusão</div>
+                            <div style="font-size: 1.1em; color: #000000; font-weight: bold;">{data_inclusao.strftime('%d/%m/%Y')}</div>
+                        </div>
+                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Final da Vigência</div>
+                            <div style="font-size: 1.1em; color: #000000; font-weight: bold;">{DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}</div>
+                        </div>
+                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Dias Restantes</div>
+                            <div style="font-size: 1.3em; color: #1a7a1a; font-weight: bold;">{dias_restantes} dias</div>
+                        </div>
+                    </div>
+                </div>
             </div>
             """, unsafe_allow_html=True)
-            st.markdown(f"• **Prêmio Anual:** {formatar_valor_real(preco_anual)}")
-            st.markdown(f"• **Valor Diário:** {formatar_valor_real(preco_anual/365)}")
-            st.markdown(f"• **Cálculo:** {formatar_valor_real(preco_anual/365)} × {dias_restantes} dias")
+            
+            # Adicionar observação separadamente se existir
+            if observacao:
+                st.markdown(f"""
+                <div style="display: flex; justify-content: center; margin: -10px 0 15px 0;">
+                    <p style="font-size: 0.85em; color: #FED7D7; text-align: center; max-width: 800px;">{observacao}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            # Valor destacado
+            st.markdown(f"""
+            <div class="total-value-section-black">
+                <h3>Valor Total: {ValueFormatter.formatar_valor_real(premio_pro_rata)}</h3>
+                <p>Valor proporcional para o período selecionado</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            return premio_pro_rata
+        return 0
+    
+    def processar_envio(self):
+        """Processa envio do formulário"""
+        if st.session_state.get('formulario_enviado', False):
+            st.success("✓ **Formulário já enviado com sucesso!**")
+            return
         
-        st.markdown("</div>", unsafe_allow_html=True)
-        
-        # Destaque do valor final
-        st.markdown(f"""
-        <div style="background: var(--success-gradient); color: white; 
-                    border-radius: 16px; padding: 20px; margin: 20px 0;
-                    text-align: center; box-shadow: var(--shadow-large);">
-            <h3 style="margin: 0; font-weight: 800; font-size: 1.8rem;">
-                ▪ Valor Total: {formatar_valor_real(premio_pro_rata)}
-            </h3>
-            <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9rem;">
-                Valor proporcional para o período selecionado
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # ==================== ENVIO DO FORMULÁRIO ====================
-    st.markdown("""
-    <div style="margin: 2rem 0 1rem 0; text-align: center;">
-        <hr style="margin: 1rem 0;">
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Verificar se formulário já foi enviado
-    formulario_ja_enviado = st.session_state.get('formulario_enviado', False)
-    
-    if formulario_ja_enviado:
-        st.success("✓ **Formulário já enviado com sucesso!**")
-        st.info("↻ Atualize a página se desejar enviar uma nova solicitação.")
-        # Não exibir o botão de envio
-        enviar_formulario = False
-    else:
+        # Botão de envio
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            enviar_formulario = st.button(
-                "▶ Calcular e Enviar Solicitação", 
-                use_container_width=True, 
-                type="primary", 
-                key="enviar_formulario_final",
-                help="Clique para processar sua solicitação de seguro"
+            enviar = st.button(
+                "▶ Calcular e Enviar Solicitação",
+                use_container_width=True,
+                type="primary",
+                key="enviar_formulario"
             )
-
-    if enviar_formulario:
-        # Verificação dupla para evitar envios múltiplos
-        if st.session_state.get('formulario_enviado', False):
-            st.warning("⚠ Formulário já foi enviado! Use 'Novo Formulário' para enviar outra solicitação.")
-            return
-            
-        with st.spinner("▪ Processando sua solicitação..."):
-            dados = preparar_dados_formulario(st.session_state)
-            erros = validar_formulario(dados)
-            
-            # Validar arquivos se existirem
-            arquivos_validos = []
-            if arquivos_uploaded:
-                arquivos_ok, erros_arquivos, arquivos_validos = validar_arquivos(arquivos_uploaded)
-                if not arquivos_ok:
-                    erros.extend(erros_arquivos)
-            
-            if erros:
-                st.session_state.form_data.update(dados)
-                st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                st.markdown("✗ **Por favor, corrija os seguintes campos:**")
-                for erro in erros:
-                    st.markdown(f"• {erro}")
-                st.markdown("</div>", unsafe_allow_html=True)
-                st.info("▪ **Dica:** Corrija os campos acima e clique em 'Calcular e Enviar' novamente.")
-            else:
-                st.session_state.form_data = {}
+        
+        if enviar:
+            with st.spinner("▪ Processando sua solicitação..."):
+                # Criar modelo do formulário
+                formulario = FormularioSeguro.from_session_state(st.session_state)
+                dados = formulario.to_dict()
                 
-                plano_nome = dados['plano_selecionado'].split('\n')[0].replace(' -', '')
-                tz_sao_paulo = timezone(timedelta(hours=-3))
-                data_inclusao = datetime.now(tz_sao_paulo).replace(hour=0, minute=0, second=0, microsecond=0)
-                dias_restantes, premio_pro_rata = calcular_pro_rata(plano_nome, data_inclusao)
+                # Validar
+                erros = FormValidator.validar_formulario_completo(dados)
                 
-                dados['timestamp_utc'] = datetime.now(timezone.utc).isoformat()
-                dados['data_inclusao'] = data_inclusao.strftime('%Y-%m-%d')
-                dados['dias_restantes'] = dias_restantes
-                dados['premio_pro_rata'] = premio_pro_rata
-                
-                try:
-                    email_sucesso = enviar_email_confirmacao(dados, email_sender, email_mode, arquivos_validos)
+                if erros:
+                    st.error("**Por favor, corrija os seguintes campos:**")
+                    for erro in erros:
+                        st.markdown(f"• {erro}")
+                else:
+                    # Preparar dados para envio do email
+                    dados_email = self._preparar_dados_email(dados)
                     
-                    if email_sucesso:
-                        st.session_state.formulario_enviado = True
-                        st.balloons()
-                        exibir_popup_sucesso(dados['nome_completo'], premio_pro_rata, email_mode, len(arquivos_validos))
+                    # Coletar arquivos anexados (considerando os removidos)
+                    arquivos = []
+                    
+                    # Adicionar arquivos de upload válidos
+                    if st.session_state.get('arquivos_upload'):
+                        arquivos_validos = [
+                            arquivo for arquivo in st.session_state.arquivos_upload 
+                            if arquivo.name not in st.session_state.get('arquivos_excluidos', [])
+                        ]
+                        arquivos.extend(arquivos_validos)
+                    
+                    # Adicionar foto da câmera se ativa
+                    if (st.session_state.get('foto_camera_ativa', True) and 
+                        st.session_state.get('foto_camera')):
+                        arquivos.append(st.session_state.foto_camera)
+                    
+                    # Tentar enviar email
+                    try:
+                        email_service = EmailService()
+                        sucesso = email_service.enviar_formulario(dados_email, arquivos)
                         
-                    else:
-                        st.markdown('<div class="error-message">', unsafe_allow_html=True)
-                        st.markdown("✗ **Erro ao transmitir mensagem. Tente novamente.**")
-                        st.markdown('</div>', unsafe_allow_html=True)
-                        
-                except Exception as e:
-                    st.error(f"✗ Erro crítico: {str(e)}")
+                        if sucesso:
+                            # Sucesso - marcar como enviado
+                            st.session_state.formulario_enviado = True
+                            
+                            primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
+                            st.success(f"### ✓ Obrigado, {primeiro_nome}!")
+                            st.success("**■ Sua solicitação foi enviada com sucesso!**")
+                            st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
+                        else:
+                            st.error("**■ Erro ao enviar solicitação**")
+                            st.error("▪ Tente novamente ou entre em contato conosco.")
+                            
+                    except ValueError as e:
+                        # Erro de configuração (API Key não encontrada)
+                        st.error("**■ Erro de configuração do sistema**")
+                        st.error(f"▪ {str(e)}")
+                        st.info("▪ Entre em contato com o administrador.")
+                    except Exception as e:
+                        # Outros erros
+                        st.error("**■ Erro inesperado ao enviar solicitação**")
+                        st.error(f"▪ {str(e)}")
+                        st.info("▪ Tente novamente ou entre em contato conosco.")
+    
+    def _preparar_dados_email(self, dados_formulario: dict) -> dict:
+        """Prepara dados formatados para o template de email"""
+        # Obter dados da sessão para campos que podem ter sido preenchidos automaticamente
+        razao_social = st.session_state.get('razao_social_busca', '') or dados_formulario.get('razao_social', '')
+        
+        # Obter plano selecionado e calcular valores
+        plano_selecionado = st.session_state.get('plano_radio', '')
+        plano_nome = ''
+        premio_formatado = ''
+        dias_restantes = ''
+        
+        if plano_selecionado:
+            from config import PLANOS_SEGURO, DATA_FINAL_VIGENCIA
+            plano_nome = plano_selecionado.split('\n')[0].replace(' -', '')
+            preco_anual = PLANOS_SEGURO.get(plano_nome, 0)
+            
+            data_inclusao = DateUtils.obter_proximo_dia_util()
+            dias_restantes_calc = (DATA_FINAL_VIGENCIA - data_inclusao.replace(tzinfo=None)).days + 1
+            premio_pro_rata = round((preco_anual / 365) * dias_restantes_calc, 2)
+            
+            premio_formatado = ValueFormatter.formatar_valor_real(premio_pro_rata)
+            dias_restantes = str(dias_restantes_calc)
+        
+        # Preparar informações de arquivos
+        arquivos_info = []
+        
+        # Adicionar arquivos de upload (excluindo os removidos)
+        if st.session_state.get('arquivos_upload'):
+            arquivos_validos = [
+                arquivo for arquivo in st.session_state.arquivos_upload 
+                if arquivo.name not in st.session_state.get('arquivos_excluidos', [])
+            ]
+            for arquivo in arquivos_validos:
+                arquivos_info.append({
+                    'name': arquivo.name,
+                    'size_mb': round(arquivo.size / 1024 / 1024, 2)
+                })
+        
+        # Adicionar foto da câmera se ativa
+        if (st.session_state.get('foto_camera_ativa', True) and 
+            st.session_state.get('foto_camera')):
+            arquivos_info.append({
+                'name': 'Foto capturada pela câmera',
+                'size_mb': round(len(st.session_state.foto_camera.getvalue()) / 1024 / 1024, 2)
+            })
+        
+        # Preparar equipamentos
+        equipamentos = []
+        if st.session_state.get('equipamentos'):
+            for eq in st.session_state.equipamentos:
+                if eq.get('tipo', '').strip():  # Só incluir equipamentos preenchidos
+                    equipamentos.append({
+                        'tipo': eq.get('tipo', ''),
+                        'descricao': eq.get('descricao', ''),
+                        'valor': eq.get('valor', '')
+                    })
+        
+        return {
+            'nome_completo': dados_formulario.get('nome_completo', ''),
+            'cpf': dados_formulario.get('cpf', ''),
+            'email': dados_formulario.get('email', ''),
+            'telefone': dados_formulario.get('telefone', ''),
+            'cnpj': dados_formulario.get('cnpj', ''),
+            'razao_social': razao_social,
+            'cep': dados_formulario.get('cep', ''),
+            'logradouro': dados_formulario.get('logradouro', ''),
+            'numero': dados_formulario.get('numero', ''),
+            'bairro': dados_formulario.get('bairro', ''),
+            'cidade': dados_formulario.get('cidade', ''),
+            'estado': dados_formulario.get('estado', ''),
+            'plano_nome': plano_nome,
+            'premio_formatado': premio_formatado,
+            'dias_restantes': dias_restantes,
+            'equipamentos': equipamentos,
+            'arquivos_info': arquivos_info
+        }
+    
+    def executar(self):
+        """Executa a aplicação principal"""
+        self.inicializar()
+        self.renderizar_cabecalho()
+        
+        # Verificar erros anteriores
+        if st.session_state.get('show_errors', False):
+            st.error("**Erros encontrados no formulário anterior**")
+            st.info("▪ **Seus dados foram preservados!** Corrija os campos abaixo.")
+        
+        # Renderizar seções na nova ordem
+        self.renderizar_identificacao_quiosque()
+        self.renderizar_identificacao_responsavel()
+        
+        # Seleção de plano primeiro
+        plano_selecionado = self.renderizar_selecao_plano()
+        
+        # Agora renderizar equipamentos após seleção do plano
+        equipamentos = EquipamentosSection.render()
+        
+        # Upload de arquivos após equipamentos
+        FormSectionRenderer.render_section_header(
+            "▪ Anexar Documentos (Opcional)",
+            "Adicione fotos ou documentos dos equipamentos e da propriedade. Use os botões para remover arquivos."
+        )
+        
+        # Inicializar lista de arquivos excluídos se não existir
+        if 'arquivos_excluidos' not in st.session_state:
+            st.session_state.arquivos_excluidos = []
+        
+        # Tabs para organizar as opções
+        tab1, tab2 = st.tabs(["📁 Selecionar Arquivos", "📷 Tirar Foto"])
+        
+        with tab1:
+            st.markdown("**Selecione arquivos do seu dispositivo:**")
+            arquivos_upload = st.file_uploader(
+                "Selecione os arquivos",
+            type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
+            accept_multiple_files=True,
+                key="arquivos_upload",
+                label_visibility="collapsed"
+        )
+        
+            # Filtrar arquivos não excluídos
+            if arquivos_upload:
+                arquivos_validos = [
+                    arquivo for arquivo in arquivos_upload 
+                    if arquivo.name not in st.session_state.arquivos_excluidos
+                ]
+                
+                if arquivos_validos:
+                    st.success(f"✓ {len(arquivos_validos)} arquivo(s) selecionado(s)")
+                    
+                    # Mostrar arquivos com botões de remoção
+                    for i, arquivo in enumerate(arquivos_validos):
+                        col1, col2 = st.columns([4, 1])
+                        with col1:
+                            st.markdown(f"📄 **{arquivo.name}** ({arquivo.size // 1024} KB)")
+                        with col2:
+                            if st.button("🗑️", key=f"remove_file_{i}_{arquivo.name}", 
+                                       help=f"Remover {arquivo.name}",
+                                       use_container_width=True):
+                                st.session_state.arquivos_excluidos.append(arquivo.name)
+                                st.rerun()
+                else:
+                    st.info("Todos os arquivos foram removidos.")
+                
+                # Botão para limpar todos os arquivos
+                if arquivos_validos and len(arquivos_validos) > 1:
+                    if st.button("🧹 Remover Todos os Arquivos", 
+                               key="clear_all_files", 
+                               type="secondary"):
+                        for arquivo in arquivos_validos:
+                            st.session_state.arquivos_excluidos.append(arquivo.name)
+                        st.rerun()
+        
+        with tab2:
+            st.markdown("**Tire uma foto diretamente:**")
+            
+            # Controle manual da foto da câmera
+            if 'foto_camera_ativa' not in st.session_state:
+                st.session_state.foto_camera_ativa = True
+            
+            if st.session_state.foto_camera_ativa:
+                foto_camera = st.camera_input(
+                    "Clique para tirar foto",
+                    key="foto_camera",
+                    label_visibility="collapsed"
+                )
+                
+                if foto_camera:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.success("✓ Foto capturada com sucesso!")
+                        # Mostrar preview da imagem em tamanho menor
+                        st.image(foto_camera, caption="Foto capturada", width=300)
+                    with col2:
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        if st.button("🗑️ Remover Foto", 
+                                   key="remove_camera_photo",
+                                   use_container_width=True):
+                            st.session_state.foto_camera_ativa = False
+                            if 'foto_camera' in st.session_state:
+                                del st.session_state.foto_camera
+                            st.rerun()
+            else:
+                st.info("📷 Foto removida.")
+                if st.button("📷 Capturar Nova Foto", 
+                           key="new_camera_photo",
+                           use_container_width=True):
+                    st.session_state.foto_camera_ativa = True
+                    st.rerun()
+        
+        # Combinar todos os arquivos válidos
+        arquivos = []
+        
+        # Adicionar arquivos de upload (excluindo os removidos)
+        if arquivos_upload:
+            arquivos_validos = [
+                arquivo for arquivo in arquivos_upload 
+                if arquivo.name not in st.session_state.arquivos_excluidos
+            ]
+            arquivos.extend(arquivos_validos)
+        
+        # Adicionar foto da câmera se ativa
+        if st.session_state.get('foto_camera_ativa', True) and st.session_state.get('foto_camera'):
+            arquivos.append(st.session_state.foto_camera)
+        
+        # Mostrar resumo se houver arquivos
+        if arquivos:
+            st.markdown("---")
+            st.markdown("**📋 Resumo Final dos Anexos:**")
+            total_size = 0
+            for i, arquivo in enumerate(arquivos, 1):
+                size_kb = arquivo.size // 1024 if hasattr(arquivo, 'size') else 0
+                total_size += size_kb
+                tipo = "📷 Foto" if arquivo == st.session_state.get('foto_camera') else "📄 Arquivo"
+                nome = getattr(arquivo, 'name', f'Foto_{i}.jpg')
+                st.markdown(f"**{i}.** {tipo}: {nome} ({size_kb} KB)")
+            
+            st.markdown(f"**Total:** {len(arquivos)} anexo(s) - {total_size} KB")
+            
+            if total_size > 25 * 1024:  # 25MB limit
+                st.warning("⚠️ Tamanho total dos arquivos excede 25MB")
+        else:
+            st.info("📎 Nenhum arquivo anexado.")
+        
+        # Cálculo do valor por último
+        premio_calculado = self.renderizar_calculo_vigencia(plano_selecionado)
+        
+        # Processamento final
+        self.processar_envio()
+
+def main():
+    """Função principal"""
+    app = FormularioApp()
+    app.executar()
 
 if __name__ == "__main__":
     main() 
