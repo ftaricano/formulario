@@ -286,158 +286,52 @@ formulario/
 
 *Sistema desenvolvido com foco em usabilidade, performance e confiabilidade para otimizar o processo de adesão de seguros.* 🛡️ 
 
-# 🛡️ Formulário de Adesão - Seguro Incêndio Conteúdos
+# 🛡️ Formulário CPZ - Seguro Incêndio
 
-Sistema web para adesão ao **Seguro Incêndio Conteúdos - Cessionários ORLA RIO** desenvolvido com Streamlit e integração SendGrid.
-
-## ✨ Funcionalidades
-
-### 📋 Formulário Completo
-- **Identificação do Responsável:** CPF, nome, email, telefone
-- **Dados da Empresa:** CNPJ com busca automática da razão social
-- **Endereço do Quiosque:** CEP com busca automática via ViaCEP
-- **Seleção de Planos:** 3 opções com coberturas detalhadas
-- **Cálculo Pró-rata:** Automático baseado na data de inclusão
-
-### 📧 Sistema de Email Duplo
-O sistema envia **2 emails automaticamente** para cada formulário:
-
-#### 📨 Email 1 - Para a Empresa
-- **Destinatário:** `informe@cpzseg.com.br`
-- **Conteúdo:** Dados completos para processamento
-- **Design:** Header azul/roxo profissional
-
-#### 📨 Email 2 - Para o Cliente  
-- **Destinatário:** Email informado pelo cliente
-- **Conteúdo:** Confirmação com próximos passos
-- **Design:** Header verde (sucesso) acolhedor
-
-### 🔍 Validações e APIs
-- **Validação de CPF:** Algoritmo de dígitos verificadores
-- **Validação de CNPJ:** Formato e consulta à Receita Federal
-- **Busca de CEP:** Integração com ViaCEP
-- **Validação de Email:** Regex robusta
-
-### 🎨 Interface Moderna
-- Design responsivo e profissional
-- Cores do Grupo CPZ
-- Experiência otimizada para mobile
-- Feedback visual em tempo real
+Formulário de adesão para Seguro Incêndio - Conteúdos Cessionários (ORLA RIO)
 
 ## 🚀 Deploy no Streamlit Cloud
 
-### 1. Preparar Repositório
-```bash
-git add .
-git commit -m "Deploy: Sistema de formulário com SendGrid"
-git push origin main
-```
+### Arquivos Principais
+- `app.py` - Aplicação principal
+- `config.py` - Configurações
+- `requirements.txt` - Dependências
+- `styles.css` - Estilos
+- `logo.png` - Logo principal
 
-### 2. Configurar no Streamlit Cloud
-1. Acesse [share.streamlit.io](https://share.streamlit.io)
-2. Conecte seu repositório GitHub
-3. Configure as **secrets** em "Advanced settings":
+### Configuração Obrigatória
+No Streamlit Cloud, configure em **App Settings > Secrets**:
 
 ```toml
 [sendgrid]
-api_key = "SG.sua_api_key_sendgrid"
-email_destino = "informe@cpzseg.com.br"
-from_email = "seu_email_verificado@gmail.com"
-from_name = "Grupo CPZ - Formulários"
+api_key = "SG.sua_api_key_real_aqui"
 ```
 
-### 3. Verificar SendGrid
-- ✅ API Key ativa
-- ✅ Email remetente verificado (Single Sender Verification)
-- ✅ Permissões de envio configuradas
+### Dependências
+- streamlit>=1.28.0
+- requests>=2.31.0
+- sendgrid>=6.10.0
 
-## 📦 Estrutura do Projeto
+## 🔧 Execução Local
 
-```
-formulario/
-├── app.py                 # Aplicação principal
-├── config.py             # Configurações do sistema
-├── requirements.txt      # Dependências Python
-├── logo.png             # Logo da empresa
-├── README.md            # Documentação
-├── DEPLOY_GUIDE.md      # Guia de deploy detalhado
-├── .gitignore           # Arquivos ignorados pelo Git
-└── .streamlit/
-    ├── config.toml      # Configurações do Streamlit
-    └── secrets.toml     # Configurações sensíveis (não commitado)
-```
-
-## 🛠️ Instalação Local
-
-### 1. Clonar Repositório
-```bash
-git clone [seu-repositorio]
-cd formulario
-```
-
-### 2. Instalar Dependências
 ```bash
 pip install -r requirements.txt
-```
-
-### 3. Configurar SendGrid
-Crie `.streamlit/secrets.toml`:
-```toml
-[sendgrid]
-api_key = "SG.sua_api_key_aqui"
-email_destino = "informe@cpzseg.com.br"
-from_email = "seu_email_verificado@gmail.com"
-from_name = "Grupo CPZ - Formulários"
-```
-
-### 4. Executar
-```bash
 streamlit run app.py
 ```
 
-## 📋 Planos Disponíveis
+## 📧 Email (SendGrid)
+1. Crie conta em: https://sendgrid.com
+2. Obtenha API Key
+3. Configure Single Sender Verification
+4. Adicione API Key nos Secrets
 
-| Cobertura | Opção 1 | Opção 2 | Opção 3 |
-|-----------|---------|---------|---------|
-| **Incêndio, Raio e Explosão** | R$ 250.000 | R$ 400.000 | R$ 700.000 |
-| **Alagamento** | R$ 50.000 | R$ 100.000 | R$ 150.000 |
-| **Danos Elétricos** | R$ 20.000 | R$ 50.000 | R$ 100.000 |
-| **Pequenas Obras** | R$ 50.000 | R$ 100.000 | R$ 150.000 |
-| **Perda/Pgto Aluguel** | R$ 20.000 | R$ 30.000 | R$ 40.000 |
-| **Vidros** | R$ 20.000 | R$ 50.000 | R$ 100.000 |
-| **Tumultos** | R$ 100.000 | R$ 150.000 | R$ 200.000 |
-| **Vendaval** | R$ 100.000 | R$ 150.000 | R$ 200.000 |
-| **Prêmio Anual** | **R$ 2.500,00** | **R$ 4.000,00** | **R$ 7.000,00** |
-
-## 🔧 Configurações Técnicas
-
-### Dependências
-- **streamlit** - Framework web
-- **requests** - Requisições HTTP para APIs
-- **sendgrid** - Envio de emails
-
-### APIs Integradas
-- **ViaCEP** - Busca de endereços por CEP
-- **ReceitaWS** - Consulta de CNPJ
-- **SendGrid** - Envio de emails profissionais
-
-### Validações
-- CPF com algoritmo de dígitos verificadores
-- CNPJ com formato e consulta online
-- Email com regex robusta
-- CEP com formato brasileiro
-- Telefone com 10/11 dígitos
-
-## 📞 Suporte
-
-- **Email:** informe@cpzseg.com.br
-- **Empresa:** Grupo CPZ Seguros
-- **Sistema:** Formulário de Adesão v2.0
-
-## 📄 Licença
-
-Sistema proprietário - Grupo CPZ Seguros © 2024
+## 📋 Funcionalidades
+- ✅ Validação CNPJ/CPF automática
+- ✅ Busca automática de endereço por CEP
+- ✅ Cálculo automático de prêmio pro rata
+- ✅ Upload de arquivos (max 25MB)
+- ✅ Envio de email com anexos
+- ✅ Design responsivo
 
 ---
-
-**🎯 Sistema pronto para produção com envio automático de emails e interface profissional!** 
+**Grupo CPZ Seguros** - informe@cpzseg.com.br 

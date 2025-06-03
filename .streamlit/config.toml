@@ -1,17 +1,15 @@
 [server]
-address = "0.0.0.0"
-port = 8080
 headless = true
 enableCORS = false
 enableXsrfProtection = false
-maxUploadSize = 200
+maxUploadSize = 25
 maxMessageSize = 200
 
 [browser]
 gatherUsageStats = false
 
 [theme]
-primaryColor = "#000080"
+primaryColor = "#182c4b"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f8f9fa"
 textColor = "#1a202c"

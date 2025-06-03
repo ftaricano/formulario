@@ -19,16 +19,24 @@ try:
 except ImportError:
     SENDGRID_AVAILABLE = False
 
-from config import (
-    PLANOS_SEGURO, DATA_FINAL_VIGENCIA, EMAIL_CONFIG, API_URLS, 
-    TIMEOUT_CONFIG, REGEX_PATTERNS, APP_CONFIG, MENSAGENS, CAMPOS_OBRIGATORIOS
-)
+try:
+    from config import (
+        PLANOS_SEGURO, DATA_FINAL_VIGENCIA, EMAIL_CONFIG, API_URLS, 
+        TIMEOUT_CONFIG, REGEX_PATTERNS, APP_CONFIG, MENSAGENS, CAMPOS_OBRIGATORIOS
+    )
+except ImportError as e:
+    st.error(f"Erro ao importar configurações: {e}")
+    st.stop()
 
-st.set_page_config(
-    page_title=APP_CONFIG["page_title"],
-    page_icon=APP_CONFIG["page_icon"],
-    layout=APP_CONFIG["layout"]
-)
+# Configuração da página deve ser a primeira chamada Streamlit
+try:
+    st.set_page_config(
+        page_title=APP_CONFIG["page_title"],
+        page_icon=APP_CONFIG["page_icon"],
+        layout=APP_CONFIG["layout"]
+    )
+except Exception as e:
+    st.error(f"Erro na configuração da página: {e}")
 
 def load_css():
     try:
@@ -37,6 +45,8 @@ def load_css():
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         st.warning("⚠ Arquivo styles.css não encontrado.")
+    except Exception as e:
+        st.warning(f"⚠ Erro ao carregar CSS: {e}")
 
 load_css()
 
@@ -74,14 +84,17 @@ def carregar_logo(width=None):
                  alt="Logo CPZ">
         </div>
         """, unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning(MENSAGENS["logo_nao_encontrado"])
+    except Exception as e:
+        st.warning(f"⚠ Erro ao carregar logo: {e}")
 
 def get_logo_base64():
     try:
         with open(APP_CONFIG["logo_path"], "rb") as f:
             return base64.b64encode(f.read()).decode()
     except FileNotFoundError:
+        return ""
+    except Exception as e:
+        st.warning(f"⚠ Erro ao processar logo: {e}")
         return ""
 
 def validar_cnpj(cnpj: str) -> bool:
