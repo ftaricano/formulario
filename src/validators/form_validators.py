@@ -87,11 +87,17 @@ class FormValidator:
         if nome and not cls.validar_nome_completo(nome):
             erros.append("Nome completo deve ter pelo menos nome e sobrenome")
         
-        # Validação de equipamentos
+        # Validação de equipamentos - OPCIONAL: apenas validar se preenchidos incorretamente
         equipamentos = dados.get('equipamentos', [])
-        equipamentos_validos = [eq for eq in equipamentos if eq.get('tipo', '').strip()]
-        if not equipamentos_validos:
-            erros.append("Pelo menos um equipamento deve ser cadastrado com o tipo preenchido")
+        for i, eq in enumerate(equipamentos):
+            # Se algum campo foi preenchido, verificar se pelo menos o tipo está preenchido
+            tipo = eq.get('tipo', '').strip()
+            descricao = eq.get('descricao', '').strip()
+            valor = eq.get('valor', '').strip()
+            
+            # Se algum campo foi preenchido mas não o tipo, exigir o tipo
+            if (descricao or valor) and not tipo:
+                erros.append(f"Equipamento {i+1}: se preenchido, o tipo é obrigatório")
         
         return erros
 

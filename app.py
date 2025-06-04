@@ -4,8 +4,10 @@ Versão Otimizada
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import sys
 import os
+import time
 
 # Adicionar diretório src ao path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -187,7 +189,8 @@ class FormularioApp:
         # Criar opções formatadas
         plano_opcoes = []
         for plano, preco in PLANOS_SEGURO.items():
-            plano_opcoes.append(f"{plano} -\n{ValueFormatter.formatar_valor_real(preco)}/ano")
+            valor_formatado = ValueFormatter.formatar_valor_real(preco).replace("R$ ", "")
+            plano_opcoes.append(f"{plano} -\n{valor_formatado}/ano")
         
         plano_selecionado = st.radio(
             "Plano",
@@ -197,7 +200,152 @@ class FormularioApp:
             horizontal=True
         )
         
+        # Adicionar tabela de coberturas após seleção
+        if plano_selecionado:
+            self._renderizar_tabela_coberturas()
+        
         return plano_selecionado
+    
+    def _renderizar_tabela_coberturas(self):
+        """Renderiza tabela compacta de coberturas otimizada para mobile"""
+        st.markdown("---")
+        st.markdown("**📋 Coberturas Incluídas nos Planos:**")
+        
+        # Tabela responsiva com CSS customizado
+        st.markdown("""
+        <style>
+        .coverage-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .coverage-table th {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            color: white;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.7rem;
+        }
+        .coverage-table td {
+            padding: 4px 3px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            font-size: 0.7rem;
+        }
+        .coverage-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .coverage-table tr:hover {
+            background-color: #e8f4f8;
+        }
+        .coverage-name {
+            text-align: left !important;
+            font-weight: 500;
+            padding-left: 6px !important;
+        }
+        .franchise-col {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        .no-franchise {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+            .coverage-table {
+                font-size: 0.65rem;
+            }
+            .coverage-table th {
+                font-size: 0.6rem;
+                padding: 4px 2px;
+            }
+            .coverage-table td {
+                padding: 3px 2px;
+                font-size: 0.6rem;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Tabela HTML compacta
+        st.markdown("""
+        <table class="coverage-table">
+            <thead>
+                <tr>
+                    <th style="width: 35%;">Coberturas</th>
+                    <th style="width: 15%;">Opção 1</th>
+                    <th style="width: 15%;">Opção 2</th>
+                    <th style="width: 15%;">Opção 3</th>
+                    <th style="width: 20%;">Franquia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="coverage-name">Incêndio, Raio e Explosão</td>
+                    <td>250.000</td>
+                    <td>400.000</td>
+                    <td>700.000</td>
+                    <td class="franchise-col">30.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Alagamento</td>
+                    <td>50.000</td>
+                    <td>100.000</td>
+                    <td>150.000</td>
+                    <td class="franchise-col">15.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Danos Elétricos</td>
+                    <td>20.000</td>
+                    <td>50.000</td>
+                    <td>100.000</td>
+                    <td class="franchise-col">3.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Pequenas Obras</td>
+                    <td>50.000</td>
+                    <td>100.000</td>
+                    <td>150.000</td>
+                    <td class="franchise-col">5.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Perda/Pgto Aluguel (6m)</td>
+                    <td>20.000</td>
+                    <td>30.000</td>
+                    <td>40.000</td>
+                    <td class="no-franchise">Não Há</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Vidros</td>
+                    <td>20.000</td>
+                    <td>50.000</td>
+                    <td>100.000</td>
+                    <td class="franchise-col">3.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Tumultos</td>
+                    <td>100.000</td>
+                    <td>150.000</td>
+                    <td>200.000</td>
+                    <td class="franchise-col">5.000</td>
+                </tr>
+                <tr>
+                    <td class="coverage-name">Vendaval</td>
+                    <td>100.000</td>
+                    <td>150.000</td>
+                    <td>200.000</td>
+                    <td class="franchise-col">10.000</td>
+                </tr>
+            </tbody>
+        </table>
+        """, unsafe_allow_html=True)
     
     def renderizar_calculo_vigencia(self, plano_selecionado: str):
         """Renderiza cálculo de vigência e valores"""
@@ -260,11 +408,61 @@ class FormularioApp:
     
     def processar_envio(self):
         """Processa envio do formulário"""
+        # Verificar se formulário já foi enviado
         if st.session_state.get('formulario_enviado', False):
-            st.success("✓ **Formulário já enviado com sucesso!**")
+            # Mostrar mensagem de sucesso
+            st.success("✅ **Formulário enviado com sucesso!**")
+            st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
+            
+            # Botão para nova solicitação (substitui o botão de enviar)
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button(
+                    "🔄 Clique aqui para fazer uma nova solicitação",
+                    use_container_width=True,
+                    type="secondary",
+                    key="nova_solicitacao"
+                ):
+                    # Resetar formulário primeiro
+                    self._resetar_formulario()
+                    
+                    # Tentar forçar refresh com múltiplas abordagens
+                    timestamp = int(time.time())
+                    
+                    # Abordagem 1: Query params (se disponível)
+                    try:
+                        st.query_params.reset = timestamp
+                    except:
+                        try:
+                            st.experimental_set_query_params(reset=timestamp)
+                        except:
+                            pass
+                    
+                    # Abordagem 2: JavaScript direto no DOM
+                    st.markdown(f"""
+                    <script>
+                        // Forçar refresh imediato
+                        window.location.reload(true);
+                        
+                        // Fallback com redirect
+                        setTimeout(function() {{
+                            window.location.href = window.location.origin + window.location.pathname + '?r={timestamp}';
+                        }}, 200);
+                    </script>
+                    """, unsafe_allow_html=True)
+                    
+                    # Abordagem 3: components.html
+                    components.html("""
+                    <script>
+                        parent.location.reload(true);
+                    </script>
+                    """, height=0)
+                    
+                    # Forçar rerun como fallback final
+                    st.rerun()
             return
         
-        # Botão de envio
+        # Botão de envio (só aparece se formulário ainda não foi enviado)
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             enviar = st.button(
@@ -291,20 +489,15 @@ class FormularioApp:
                     # Preparar dados para envio do email
                     dados_email = self._preparar_dados_email(dados)
                     
-                    # Coletar arquivos anexados (considerando os removidos)
+                    # Coletar arquivos anexados
                     arquivos = []
                     
-                    # Adicionar arquivos de upload válidos
+                    # Adicionar arquivos de upload
                     if st.session_state.get('arquivos_upload'):
-                        arquivos_validos = [
-                            arquivo for arquivo in st.session_state.arquivos_upload 
-                            if arquivo.name not in st.session_state.get('arquivos_excluidos', [])
-                        ]
-                        arquivos.extend(arquivos_validos)
+                        arquivos.extend(st.session_state.arquivos_upload)
                     
-                    # Adicionar foto da câmera se ativa
-                    if (st.session_state.get('foto_camera_ativa', True) and 
-                        st.session_state.get('foto_camera')):
+                    # Adicionar foto da câmera se existir
+                    if st.session_state.get('foto_camera'):
                         arquivos.append(st.session_state.foto_camera)
                     
                     # Tentar enviar email
@@ -313,13 +506,14 @@ class FormularioApp:
                         sucesso = email_service.enviar_formulario(dados_email, arquivos)
                         
                         if sucesso:
-                            # Sucesso - marcar como enviado
+                            # Sucesso - marcar como enviado (isso fará o botão mudar)
                             st.session_state.formulario_enviado = True
                             
                             primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
                             st.success(f"### ✓ Obrigado, {primeiro_nome}!")
                             st.success("**■ Sua solicitação foi enviada com sucesso!**")
                             st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
+                            st.rerun()  # Recarregar para mostrar o botão de nova solicitação
                         else:
                             st.error("**■ Erro ao enviar solicitação**")
                             st.error("▪ Tente novamente ou entre em contato conosco.")
@@ -361,21 +555,16 @@ class FormularioApp:
         # Preparar informações de arquivos
         arquivos_info = []
         
-        # Adicionar arquivos de upload (excluindo os removidos)
+        # Adicionar arquivos de upload
         if st.session_state.get('arquivos_upload'):
-            arquivos_validos = [
-                arquivo for arquivo in st.session_state.arquivos_upload 
-                if arquivo.name not in st.session_state.get('arquivos_excluidos', [])
-            ]
-            for arquivo in arquivos_validos:
+            for arquivo in st.session_state.arquivos_upload:
                 arquivos_info.append({
                     'name': arquivo.name,
                     'size_mb': round(arquivo.size / 1024 / 1024, 2)
                 })
         
-        # Adicionar foto da câmera se ativa
-        if (st.session_state.get('foto_camera_ativa', True) and 
-            st.session_state.get('foto_camera')):
+        # Adicionar foto da câmera se existir
+        if st.session_state.get('foto_camera'):
             arquivos_info.append({
                 'name': 'Foto capturada pela câmera',
                 'size_mb': round(len(st.session_state.foto_camera.getvalue()) / 1024 / 1024, 2)
@@ -412,6 +601,46 @@ class FormularioApp:
             'arquivos_info': arquivos_info
         }
     
+    def _resetar_formulario(self):
+        """Reseta todos os campos do formulário no session_state"""
+        # Lista de todas as chaves do session_state relacionadas ao formulário
+        chaves_para_resetar = [
+            # Identificação do Quiosque
+            'cnpj', 'razao_social', 'razao_social_busca',
+            'cep', 'logradouro', 'logradouro_busca', 'numero', 'complemento',
+            'bairro', 'bairro_busca', 'cidade', 'cidade_busca', 'estado', 'estado_busca',
+            
+            # Identificação do Responsável
+            'cpf', 'nome_completo', 'email', 'telefone',
+            
+            # Seleção do Plano
+            'plano_radio',
+            
+            # Equipamentos
+            'equipamentos', 'num_equipamentos',
+            
+            # Arquivos
+            'arquivos_upload', 'foto_camera',
+            
+            # Controle do formulário
+            'formulario_enviado', 'show_errors'
+        ]
+        
+        # Resetar todas as chaves
+        for chave in chaves_para_resetar:
+            if chave in st.session_state:
+                del st.session_state[chave]
+        
+        # Limpar dados de busca automática
+        campos_busca = [
+            'razao_social_busca', 'logradouro_busca', 'bairro_busca', 
+            'cidade_busca', 'estado_busca'
+        ]
+        
+        for campo in campos_busca:
+            if campo in st.session_state:
+                del st.session_state[campo]
+    
     def executar(self):
         """Executa a aplicação principal"""
         self.inicializar()
@@ -435,12 +664,8 @@ class FormularioApp:
         # Upload de arquivos após equipamentos
         FormSectionRenderer.render_section_header(
             "▪ Anexar Documentos (Opcional)",
-            "Adicione fotos ou documentos dos equipamentos e da propriedade. Use os botões para remover arquivos."
+            "Adicione fotos ou documentos dos equipamentos e da propriedade."
         )
-        
-        # Inicializar lista de arquivos excluídos se não existir
-        if 'arquivos_excluidos' not in st.session_state:
-            st.session_state.arquivos_excluidos = []
         
         # Tabs para organizar as opções
         tab1, tab2 = st.tabs(["📁 Selecionar Arquivos", "📷 Tirar Foto"])
@@ -449,115 +674,30 @@ class FormularioApp:
             st.markdown("**Selecione arquivos do seu dispositivo:**")
             arquivos_upload = st.file_uploader(
                 "Selecione os arquivos",
-            type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
-            accept_multiple_files=True,
+                type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
+                accept_multiple_files=True,
                 key="arquivos_upload",
                 label_visibility="collapsed"
-        )
-        
-            # Filtrar arquivos não excluídos
-            if arquivos_upload:
-                arquivos_validos = [
-                    arquivo for arquivo in arquivos_upload 
-                    if arquivo.name not in st.session_state.arquivos_excluidos
-                ]
-                
-                if arquivos_validos:
-                    st.success(f"✓ {len(arquivos_validos)} arquivo(s) selecionado(s)")
-                    
-                    # Mostrar arquivos com botões de remoção
-                    for i, arquivo in enumerate(arquivos_validos):
-                        col1, col2 = st.columns([4, 1])
-                        with col1:
-                            st.markdown(f"📄 **{arquivo.name}** ({arquivo.size // 1024} KB)")
-                        with col2:
-                            if st.button("🗑️", key=f"remove_file_{i}_{arquivo.name}", 
-                                       help=f"Remover {arquivo.name}",
-                                       use_container_width=True):
-                                st.session_state.arquivos_excluidos.append(arquivo.name)
-                                st.rerun()
-                else:
-                    st.info("Todos os arquivos foram removidos.")
-                
-                # Botão para limpar todos os arquivos
-                if arquivos_validos and len(arquivos_validos) > 1:
-                    if st.button("🧹 Remover Todos os Arquivos", 
-                               key="clear_all_files", 
-                               type="secondary"):
-                        for arquivo in arquivos_validos:
-                            st.session_state.arquivos_excluidos.append(arquivo.name)
-                        st.rerun()
+            )
         
         with tab2:
             st.markdown("**Tire uma foto diretamente:**")
-            
-            # Controle manual da foto da câmera
-            if 'foto_camera_ativa' not in st.session_state:
-                st.session_state.foto_camera_ativa = True
-            
-            if st.session_state.foto_camera_ativa:
-                foto_camera = st.camera_input(
-                    "Clique para tirar foto",
-                    key="foto_camera",
-                    label_visibility="collapsed"
-                )
-                
-                if foto_camera:
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.success("✓ Foto capturada com sucesso!")
-                        # Mostrar preview da imagem em tamanho menor
-                        st.image(foto_camera, caption="Foto capturada", width=300)
-                    with col2:
-                        st.markdown("<br>", unsafe_allow_html=True)
-                        if st.button("🗑️ Remover Foto", 
-                                   key="remove_camera_photo",
-                                   use_container_width=True):
-                            st.session_state.foto_camera_ativa = False
-                            if 'foto_camera' in st.session_state:
-                                del st.session_state.foto_camera
-                            st.rerun()
-            else:
-                st.info("📷 Foto removida.")
-                if st.button("📷 Capturar Nova Foto", 
-                           key="new_camera_photo",
-                           use_container_width=True):
-                    st.session_state.foto_camera_ativa = True
-                    st.rerun()
+            foto_camera = st.camera_input(
+                "Clique para tirar foto",
+                key="foto_camera",
+                label_visibility="collapsed"
+            )
         
         # Combinar todos os arquivos válidos
         arquivos = []
         
-        # Adicionar arquivos de upload (excluindo os removidos)
+        # Adicionar arquivos de upload
         if arquivos_upload:
-            arquivos_validos = [
-                arquivo for arquivo in arquivos_upload 
-                if arquivo.name not in st.session_state.arquivos_excluidos
-            ]
-            arquivos.extend(arquivos_validos)
+            arquivos.extend(arquivos_upload)
         
-        # Adicionar foto da câmera se ativa
-        if st.session_state.get('foto_camera_ativa', True) and st.session_state.get('foto_camera'):
-            arquivos.append(st.session_state.foto_camera)
-        
-        # Mostrar resumo se houver arquivos
-        if arquivos:
-            st.markdown("---")
-            st.markdown("**📋 Resumo Final dos Anexos:**")
-            total_size = 0
-            for i, arquivo in enumerate(arquivos, 1):
-                size_kb = arquivo.size // 1024 if hasattr(arquivo, 'size') else 0
-                total_size += size_kb
-                tipo = "📷 Foto" if arquivo == st.session_state.get('foto_camera') else "📄 Arquivo"
-                nome = getattr(arquivo, 'name', f'Foto_{i}.jpg')
-                st.markdown(f"**{i}.** {tipo}: {nome} ({size_kb} KB)")
-            
-            st.markdown(f"**Total:** {len(arquivos)} anexo(s) - {total_size} KB")
-            
-            if total_size > 25 * 1024:  # 25MB limit
-                st.warning("⚠️ Tamanho total dos arquivos excede 25MB")
-        else:
-            st.info("📎 Nenhum arquivo anexado.")
+        # Adicionar foto da câmera se existir
+        if foto_camera:
+            arquivos.append(foto_camera)
         
         # Cálculo do valor por último
         premio_calculado = self.renderizar_calculo_vigencia(plano_selecionado)

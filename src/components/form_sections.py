@@ -49,8 +49,8 @@ class EquipamentosSection:
         """Renderiza seção completa de equipamentos"""
         st.markdown("")
         FormSectionRenderer.render_section_header(
-            "▪ Relação de Bens e Equipamentos Sem Nota Fiscal",
-            "Adicione todos os bens e equipamentos sem nota fiscal. Use os botões para adicionar ou remover itens."
+            "▪ Relação de Bens e Equipamentos Sem Nota Fiscal (Opcional)",
+            "Adicione bens e equipamentos sem nota fiscal, caso existam. Use os botões para adicionar ou remover itens."
         )
         
         # Inicializar lista de equipamentos
@@ -60,11 +60,11 @@ class EquipamentosSection:
         # Cabeçalhos da tabela
         col1, col2, col3, col4 = st.columns([3, 4, 2, 1])
         with col1:
-            st.markdown("**Tipo***")
+            st.markdown("**Tipo**")
         with col2:
-            st.markdown("**Descrição***")
+            st.markdown("**Descrição**")
         with col3:
-            st.markdown("**Valor (R$)***")
+            st.markdown("**Valor (R$)**")
         
         # Renderizar equipamentos
         for i, equipamento in enumerate(st.session_state.equipamentos):
