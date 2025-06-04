@@ -692,26 +692,170 @@ class FormularioApp:
             "Adicione fotos ou documentos dos equipamentos e da propriedade."
         )
         
+        # Aviso simples sobre limites
+        st.info("📋 **Limite de tamanho:** Máximo 10MB por arquivo | Máximo 25MB no total")
+        
+        # CSS personalizado para traduzir textos do Streamlit
+        st.markdown("""
+        <style>
+        /* Limpar e traduzir file uploader */
+        .stFileUploader [data-testid="stFileUploaderDropzone"] {
+            position: relative !important;
+            min-height: 100px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: 2px dashed #cccccc !important;
+            border-radius: 8px !important;
+            background-color: #fafafa !important;
+            margin-bottom: 15px !important;
+        }
+        
+        .stFileUploader [data-testid="stFileUploaderDropzone"]:hover {
+            border-color: #999999 !important;
+            background-color: #f5f5f5 !important;
+        }
+        
+        /* Esconder textos originais em inglês de forma limpa */
+        .stFileUploader [data-testid="stFileUploaderDropzone"] > div,
+        .stFileUploader [data-testid="stFileUploaderDropzone"] span,
+        .stFileUploader [data-testid="stFileUploaderDropzone"] small,
+        .stFileUploader [data-testid="stFileUploaderDropzone"] p {
+            opacity: 0 !important;
+            font-size: 0 !important;
+        }
+        
+        /* Texto principal em português - centralizado */
+        .stFileUploader [data-testid="stFileUploaderDropzone"]::before {
+            content: "Arraste e solte arquivos aqui" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            font-size: 1rem !important;
+            color: #666666 !important;
+            font-weight: 600 !important;
+            pointer-events: none !important;
+            z-index: 10 !important;
+        }
+        
+        /* Remover texto secundário da área de drop */
+        .stFileUploader [data-testid="stFileUploaderDropzone"]::after {
+            display: none !important;
+        }
+        
+        /* Reposicionar botão Browse files para baixo da área */
+        .stFileUploader button[kind="secondary"] {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%) !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 8px !important;
+            padding: 0.75rem 1rem !important;
+            min-height: 55px !important;
+            width: 140px !important;
+            font-size: 0 !important;
+            position: relative !important;
+            margin: 0 0 0 auto !important;
+            display: block !important;
+            float: right !important;
+        }
+        
+        .stFileUploader button[kind="secondary"] span {
+            opacity: 0 !important;
+            font-size: 0 !important;
+        }
+        
+        .stFileUploader button[kind="secondary"]::after {
+            content: "Procurar Arquivos" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            font-size: 0.9rem !important;
+            font-weight: 600 !important;
+            color: white !important;
+            z-index: 10 !important;
+        }
+        
+        .stFileUploader button[kind="secondary"]:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        /* Traduzir botão da câmera de forma limpa */
+        .stCameraInput button {
+            position: relative !important;
+            font-size: 0 !important;
+        }
+        
+        .stCameraInput button span {
+            opacity: 0 !important;
+            font-size: 0 !important;
+        }
+        
+        .stCameraInput button::after {
+            content: "📷 Clique para tirar uma foto" !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            color: white !important;
+            z-index: 10 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         # Tabs para organizar as opções
         tab1, tab2 = st.tabs(["📁 Selecionar Arquivos", "📷 Tirar Foto"])
         
         with tab1:
             st.markdown("**Selecione arquivos do seu dispositivo:**")
             arquivos_upload = st.file_uploader(
-                "Selecione os arquivos",
+                "Arraste arquivos aqui ou clique para selecionar",
                 type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
                 accept_multiple_files=True,
                 key="arquivos_upload",
-                label_visibility="collapsed"
+                help="Tipos aceitos: JPG, JPEG, PNG, PDF, XLSX • Máximo: 10MB por arquivo"
             )
         
         with tab2:
             st.markdown("**Tire uma foto diretamente:**")
-            foto_camera = st.camera_input(
-                "Clique para tirar foto",
-                key="foto_camera",
-                label_visibility="collapsed"
-            )
+            
+            # Controle de estado para mostrar camera input
+            if 'mostrar_camera' not in st.session_state:
+                st.session_state.mostrar_camera = False
+            
+            # Botão para ativar câmera
+            if not st.session_state.mostrar_camera:
+                if st.button("📷 Ativar Câmera", use_container_width=True, type="secondary"):
+                    st.session_state.mostrar_camera = True
+                    st.rerun()
+                st.info("💡 Clique no botão acima para ativar a câmera e tirar uma foto")
+            else:
+                # Mostrar camera input e botão para fechar
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    foto_camera = st.camera_input(
+                        "Capturar imagem",
+                        key="foto_camera",
+                        help="Tire uma foto dos equipamentos ou do local"
+                    )
+                with col2:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.button("❌", help="Fechar câmera", use_container_width=True):
+                        st.session_state.mostrar_camera = False
+                        # Limpar foto se existir
+                        if 'foto_camera' in st.session_state:
+                            del st.session_state.foto_camera
+                        st.rerun()
+            
+            # Definir foto_camera como None se câmera não está ativa
+            if not st.session_state.mostrar_camera:
+                foto_camera = None
+            else:
+                foto_camera = st.session_state.get('foto_camera', None)
         
         # Combinar todos os arquivos válidos
         arquivos = []

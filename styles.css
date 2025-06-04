@@ -840,6 +840,46 @@ div[data-testid="stRadio"] > div > label:has(input:checked) * {
     filter: brightness(1.1) !important;
 }
 
+/* Traduções específicas para elementos do file uploader */
+.stFileUploader [data-testid="stFileUploaderDropzone"] {
+    position: relative !important;
+}
+
+.stFileUploader [data-testid="stFileUploaderDropzone"] > div:first-child:not(:empty)::after {
+    content: "Arraste e solte seus arquivos aqui" !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1rem !important;
+    color: #666666 !important;
+    font-weight: 500 !important;
+    pointer-events: none !important;
+    z-index: 10 !important;
+}
+
+.stFileUploader [data-testid="stFileUploaderDropzone"] small {
+    font-size: 0 !important;
+}
+
+.stFileUploader [data-testid="stFileUploaderDropzone"] small::after {
+    content: "Ou clique para procurar arquivos" !important;
+    font-size: 0.875rem !important;
+    color: #888888 !important;
+}
+
+/* Traduzir botão Browse files */
+.stFileUploader button[kind="secondary"] span {
+    font-size: 0 !important;
+}
+
+.stFileUploader button[kind="secondary"] span::after {
+    content: "Procurar Arquivos" !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: white !important;
+}
+
 /* ==================== UPLOAD INFO SECTION ==================== */
 
 .upload-info-section {
