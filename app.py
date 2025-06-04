@@ -364,23 +364,48 @@ class FormularioApp:
             if data_inclusao.date() != amanha.date():
                 observacao = "* Data ajustada para próximo dia útil"
             
-            # Quadro resumo da vigência centralizado
+            # Quadro resumo da vigência centralizado com responsividade
             st.markdown(f"""
+            <style>
+                @media (max-width: 767px) {{
+                    .vigencia-grid {{
+                        display: grid !important;
+                        grid-template-columns: 1fr !important;
+                        gap: 12px !important;
+                    }}
+                    .vigencia-container {{
+                        padding: 15px !important;
+                        margin: 10px 5px !important;
+                    }}
+                    .vigencia-card {{
+                        padding: 12px !important;
+                    }}
+                    .vigencia-card-label {{
+                        font-size: 0.8em !important;
+                    }}
+                    .vigencia-card-value {{
+                        font-size: 1em !important;
+                    }}
+                    .vigencia-card-value.destaque {{
+                        font-size: 1.1em !important;
+                    }}
+                }}
+            </style>
             <div style="display: flex; justify-content: center; margin: 15px 0;">
-                <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); border-radius: 12px; padding: 20px; max-width: 800px; width: 100%; color: white; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(26, 26, 26, 0.4); position: relative;">
+                <div class="vigencia-container" style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); border-radius: 12px; padding: 20px; max-width: 800px; width: 100%; color: white; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(26, 26, 26, 0.4); position: relative;">
                     <h3 style="margin: 0 0 15px 0; color: #ffffff; font-size: 1.1em; text-align: center; position: relative; z-index: 2;">📅 Período de Vigência</h3>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: center; position: relative; z-index: 2;">
-                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
-                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Data de Inclusão</div>
-                            <div style="font-size: 1.1em; color: #000000; font-weight: bold;">{data_inclusao.strftime('%d/%m/%Y')}</div>
+                    <div class="vigencia-grid" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: center; position: relative; z-index: 2;">
+                        <div class="vigencia-card" style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div class="vigencia-card-label" style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Data de Inclusão</div>
+                            <div class="vigencia-card-value" style="font-size: 1.1em; color: #000000; font-weight: bold;">{data_inclusao.strftime('%d/%m/%Y')}</div>
                         </div>
-                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
-                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Final da Vigência</div>
-                            <div style="font-size: 1.1em; color: #000000; font-weight: bold;">{DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}</div>
+                        <div class="vigencia-card" style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div class="vigencia-card-label" style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Final da Vigência</div>
+                            <div class="vigencia-card-value" style="font-size: 1.1em; color: #000000; font-weight: bold;">{DATA_FINAL_VIGENCIA.strftime('%d/%m/%Y')}</div>
                         </div>
-                        <div style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
-                            <div style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Dias Restantes</div>
-                            <div style="font-size: 1.3em; color: #1a7a1a; font-weight: bold;">{dias_restantes} dias</div>
+                        <div class="vigencia-card" style="background: #ffffff; padding: 15px; border-radius: 8px; text-align: center; position: relative; z-index: 3; border: 2px solid rgba(255, 255, 255, 0.4); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);">
+                            <div class="vigencia-card-label" style="font-size: 0.9em; margin-bottom: 5px; color: #333333;">Dias Restantes</div>
+                            <div class="vigencia-card-value destaque" style="font-size: 1.3em; color: #1a7a1a; font-weight: bold;">{dias_restantes} dias</div>
                         </div>
                     </div>
                 </div>
