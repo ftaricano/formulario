@@ -97,7 +97,9 @@ class EmailService:
                 'equipamentos': dados.get('equipamentos', []),
                 'equipamentos_html': len(dados.get('equipamentos', [])) > 0,
                 'arquivos': dados.get('arquivos_info', []),
-                'timestamp': datetime.now().strftime('%d/%m/%Y às %H:%M:%S')
+                'timestamp': datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+                'incluir_outro_quiosque': dados.get('incluir_outro_quiosque', False),
+                'grupo_info': dados.get('grupo_info', {})
             }
             
             return template.render(**template_data)

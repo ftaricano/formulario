@@ -225,6 +225,30 @@
         </div>
         
         <div class="content">
+            {% if grupo_info.pertence_grupo %}
+            <div class="section" style="background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); color: white; margin: 0;">
+                <h2 class="section-title" style="color: white; border-bottom-color: rgba(255,255,255,0.3);">🏪 Quiosque em Grupo</h2>
+                <div class="data-grid">
+                    <div class="data-item" style="background-color: rgba(255,255,255,0.1); border-left-color: white;">
+                        <div class="data-label" style="color: rgba(255,255,255,0.8);">Número do Quiosque</div>
+                        <div class="data-value" style="color: white; font-size: 18px;">QUIOSQUE {{grupo_info.numero_quiosque}}</div>
+                    </div>
+                    <div class="data-item" style="background-color: rgba(255,255,255,0.1); border-left-color: white;">
+                        <div class="data-label" style="color: rgba(255,255,255,0.8);">ID do Grupo</div>
+                        <div class="data-value" style="color: white; font-size: 18px;">{{grupo_info.grupo_id}}</div>
+                    </div>
+                </div>
+                {% if grupo_info.responsavel_principal and grupo_info.responsavel_principal != nome_completo %}
+                <div class="address-full" style="background-color: rgba(255,255,255,0.1); border-left-color: white; margin-top: 15px;">
+                    <div class="data-label" style="color: rgba(255,255,255,0.8);">Responsável Principal do Grupo</div>
+                    <div class="data-value" style="color: white;">
+                        {{grupo_info.responsavel_principal}} ({{grupo_info.email_principal}})
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
             <div class="section">
                 <h2 class="section-title">Dados do Quiosque</h2>
                 <div class="data-grid">
@@ -334,6 +358,20 @@
             </div>
             {% endif %}
         </div>
+        
+        {% if incluir_outro_quiosque %}
+        <div class="section" style="background: linear-gradient(135deg, #fef5e7 0%, #fff2d9 100%); border: 2px solid #f6ad55; border-radius: 12px; margin: 0 20px 20px 20px;">
+            <h2 class="section-title" style="color: #c05621; border-bottom-color: #f6ad55;">✅ Solicitação Adicional</h2>
+            <div style="background-color: rgba(246, 173, 85, 0.1); padding: 20px; border-radius: 8px; border-left: 4px solid #f6ad55;">
+                <div style="color: #c05621; font-size: 16px; font-weight: 600;">
+                    ⚠️ <strong>ATENÇÃO:</strong> Cliente solicitou incluir outro quiosque para cobrança única
+                </div>
+                <div style="color: #744210; margin-top: 10px; font-size: 14px;">
+                    É necessário entrar em contato para coletar dados do próximo quiosque e calcular valor total da cobrança única.
+                </div>
+            </div>
+        </div>
+        {% endif %}
         
         <div class="footer">
             <div class="timestamp">

@@ -439,55 +439,77 @@ class FormularioApp:
             st.success("✅ **Formulário enviado com sucesso!**")
             st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
             
-            # Botão para nova solicitação (substitui o botão de enviar)
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                if st.button(
-                    "🔄 Clique aqui para fazer uma nova solicitação",
-                    use_container_width=True,
-                    type="secondary",
-                    key="nova_solicitacao"
-                ):
-                    # Resetar formulário primeiro
-                    self._resetar_formulario()
-                    
-                    # Tentar forçar refresh com múltiplas abordagens
-                    timestamp = int(time.time())
-                    
-                    # Abordagem 1: Query params (se disponível)
-                    try:
-                        st.query_params.reset = timestamp
-                    except:
-                        try:
-                            st.experimental_set_query_params(reset=timestamp)
-                        except:
-                            pass
-                    
-                    # Abordagem 2: JavaScript direto no DOM
-                    st.markdown(f"""
-                    <script>
-                        // Forçar refresh imediato
-                        window.location.reload(true);
+            # Verificar se foi enviado com "incluir outro quiosque" marcado
+            # Se foi com grupo, mostrar botão de nova solicitação
+            # Se foi normal, apenas mostrar mensagem para atualizar página
+            if st.session_state.get('foi_envio_com_grupo', False):
+                # Botão para nova solicitação (substitui o botão de enviar)
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    if st.button(
+                        "🔄 Clique aqui para fazer uma nova solicitação",
+                        use_container_width=True,
+                        type="secondary",
+                        key="nova_solicitacao"
+                    ):
+                        # Resetar formulário primeiro
+                        self._resetar_formulario()
                         
-                        // Fallback com redirect
-                        setTimeout(function() {{
-                            window.location.href = window.location.origin + window.location.pathname + '?r={timestamp}';
-                        }}, 200);
-                    </script>
-                    """, unsafe_allow_html=True)
-                    
-                    # Abordagem 3: components.html
-                    components.html("""
-                    <script>
-                        parent.location.reload(true);
-                    </script>
-                    """, height=0)
-                    
-                    # Forçar rerun como fallback final
-                    st.rerun()
+                        # Tentar forçar refresh com múltiplas abordagens
+                        timestamp = int(time.time())
+                        
+                        # Abordagem 1: Query params (se disponível)
+                        try:
+                            st.query_params.reset = timestamp
+                        except:
+                            try:
+                                st.experimental_set_query_params(reset=timestamp)
+                            except:
+                                pass
+                        
+                        # Abordagem 2: JavaScript direto no DOM
+                        st.markdown(f"""
+                        <script>
+                            // Forçar refresh imediato
+                            window.location.reload(true);
+                            
+                            // Fallback com redirect
+                            setTimeout(function() {{
+                                window.location.href = window.location.origin + window.location.pathname + '?r={timestamp}';
+                            }}, 200);
+                        </script>
+                        """, unsafe_allow_html=True)
+                        
+                        # Abordagem 3: components.html
+                        components.html("""
+                        <script>
+                            parent.location.reload(true);
+                        </script>
+                        """, height=0)
+                        
+                        # Forçar rerun como fallback final
+                        st.rerun()
+            else:
+                # Envio normal - apenas mostrar mensagem para atualizar página
+                st.info("📄 **Caso queira preencher outro formulário, atualize a página**")
+                
             return
-        
+
         # Botão de envio (só aparece se formulário ainda não foi enviado)
+        # Checkbox para incluir outro quiosque
+        st.markdown("---")
+        incluir_outro_quiosque = st.checkbox(
+            "✅ Deseja incluir outro quiosque para cobrança única?",
+            key="incluir_outro_quiosque",
+            help="Marque esta opção se você possui outro quiosque que deseja incluir na mesma apólice"
+        )
+        
+        # Se checkbox marcado, mostrar aviso
+        if incluir_outro_quiosque:
+            st.info("📋 **Atenção:** Ao marcar esta opção e finalizar o formulário, será necessário preenchê-lo novamente com as informações do novo quiosque.")
+        
+        st.markdown("---")
+        
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             enviar = st.button(
@@ -511,6 +533,21 @@ class FormularioApp:
                     for erro in erros:
                         st.markdown(f"• {erro}")
                 else:
+                    # Verificar se deve incluir outro quiosque e criar grupo se necessário
+                    incluir_outro = st.session_state.get('incluir_outro_quiosque', False)
+                    
+                    if incluir_outro and 'grupo_quiosques' not in st.session_state:
+                        # Primeira vez com "incluir outro" - criar grupo
+                        st.session_state.grupo_quiosques = {
+                            'id': f"GRUPO_{int(time.time())}",
+                            'contador': 1,
+                            'responsavel_principal': dados.get('nome_completo', ''),
+                            'email_principal': dados.get('email', '')
+                        }
+                    elif 'grupo_quiosques' in st.session_state:
+                        # Já existe grupo - incrementar contador
+                        st.session_state.grupo_quiosques['contador'] += 1
+                    
                     # Preparar dados para envio do email
                     dados_email = self._preparar_dados_email(dados)
                     
@@ -531,14 +568,48 @@ class FormularioApp:
                         sucesso = email_service.enviar_formulario(dados_email, arquivos)
                         
                         if sucesso:
-                            # Sucesso - marcar como enviado (isso fará o botão mudar)
-                            st.session_state.formulario_enviado = True
-                            
-                            primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
-                            st.success(f"### ✓ Obrigado, {primeiro_nome}!")
-                            st.success("**■ Sua solicitação foi enviada com sucesso!**")
-                            st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
-                            st.rerun()  # Recarregar para mostrar o botão de nova solicitação
+                            # Verificar se está em modo de grupo (incluir outro quiosque)
+                            if incluir_outro or 'grupo_quiosques' in st.session_state:
+                                # Verificar se é continuação do grupo ou finalização
+                                if incluir_outro:
+                                    # Continuação de grupo - não é o último quiosque
+                                    primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
+                                    contador = st.session_state.grupo_quiosques['contador'] if 'grupo_quiosques' in st.session_state else 1
+                                    
+                                    st.success(f"### ✓ Quiosque {contador} enviado com sucesso, {primeiro_nome}!")
+                                    st.success("**■ Dados do quiosque foram enviados!**")
+                                    st.info("▪ **Agora preencha os dados do próximo quiosque do mesmo grupo.**")
+                                    
+                                    # Resetar formulário mas manter dados do grupo
+                                    self._resetar_formulario_grupo()
+                                    
+                                    # Aguardar um pouco e recarregar
+                                    time.sleep(1)
+                                    st.rerun()
+                                else:
+                                    # Finalização de grupo - último quiosque (incluir_outro = False mas grupo existe)
+                                    st.session_state.formulario_enviado = True
+                                    # Marcar que foi envio com grupo para mostrar botão de nova solicitação
+                                    st.session_state.foi_envio_com_grupo = True
+                                    
+                                    primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
+                                    contador = st.session_state.grupo_quiosques['contador'] if 'grupo_quiosques' in st.session_state else 1
+                                    
+                                    st.success(f"### ✓ Grupo finalizado com sucesso, {primeiro_nome}!")
+                                    st.success(f"**■ Total de {contador} quiosques enviados!**")
+                                    st.info("▪ **Nossa equipe analisará suas solicitações e entrará em contato em breve.**")
+                                    st.rerun()  # Recarregar para mostrar o botão de nova solicitação
+                            else:
+                                # Sucesso final - marcar como enviado (comportamento original)
+                                st.session_state.formulario_enviado = True
+                                # Marcar que foi envio normal (sem grupo)
+                                st.session_state.foi_envio_com_grupo = False
+                                
+                                primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
+                                st.success(f"### ✓ Obrigado, {primeiro_nome}!")
+                                st.success("**■ Sua solicitação foi enviada com sucesso!**")
+                                st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
+                                st.rerun()  # Recarregar para mostrar mensagem de atualizar página
                         else:
                             st.error("**■ Erro ao enviar solicitação**")
                             st.error("▪ Tente novamente ou entre em contato conosco.")
@@ -623,7 +694,9 @@ class FormularioApp:
             'premio_formatado': premio_formatado,
             'dias_restantes': dias_restantes,
             'equipamentos': equipamentos,
-            'arquivos_info': arquivos_info
+            'arquivos_info': arquivos_info,
+            'incluir_outro_quiosque': st.session_state.get('incluir_outro_quiosque', False),
+            'grupo_info': self._obter_info_grupo()
         }
     
     def _resetar_formulario(self):
@@ -647,6 +720,55 @@ class FormularioApp:
             # Arquivos
             'arquivos_upload', 'foto_camera',
             
+            # Opções adicionais
+            'incluir_outro_quiosque',
+            
+            # Controle do formulário
+            'formulario_enviado', 'show_errors',
+            
+            # Dados do grupo
+            'grupo_quiosques'
+        ]
+        
+        # Resetar todas as chaves
+        for chave in chaves_para_resetar:
+            if chave in st.session_state:
+                del st.session_state[chave]
+        
+        # Limpar dados de busca automática
+        campos_busca = [
+            'razao_social_busca', 'logradouro_busca', 'bairro_busca', 
+            'cidade_busca', 'estado_busca'
+        ]
+        
+        for campo in campos_busca:
+            if campo in st.session_state:
+                del st.session_state[campo]
+    
+    def _resetar_formulario_grupo(self):
+        """Reseta todos os campos do formulário no session_state para o grupo"""
+        # Lista de todas as chaves do session_state relacionadas ao formulário
+        chaves_para_resetar = [
+            # Identificação do Quiosque
+            'cnpj', 'razao_social', 'razao_social_busca',
+            'cep', 'logradouro', 'logradouro_busca', 'numero', 'complemento',
+            'bairro', 'bairro_busca', 'cidade', 'cidade_busca', 'estado', 'estado_busca',
+            
+            # Identificação do Responsável
+            'cpf', 'nome_completo', 'email', 'telefone',
+            
+            # Seleção do Plano
+            'plano_radio',
+            
+            # Equipamentos
+            'equipamentos', 'num_equipamentos',
+            
+            # Arquivos
+            'arquivos_upload', 'foto_camera',
+            
+            # Opções adicionais
+            'incluir_outro_quiosque',
+            
             # Controle do formulário
             'formulario_enviado', 'show_errors'
         ]
@@ -666,10 +788,43 @@ class FormularioApp:
             if campo in st.session_state:
                 del st.session_state[campo]
     
+    def _obter_info_grupo(self):
+        """Obtém informações do grupo de quiosques se existir"""
+        if 'grupo_quiosques' in st.session_state:
+            grupo = st.session_state.grupo_quiosques
+            return {
+                'pertence_grupo': True,
+                'grupo_id': grupo['id'],
+                'numero_quiosque': grupo['contador'],
+                'responsavel_principal': grupo['responsavel_principal'],
+                'email_principal': grupo['email_principal']
+            }
+        else:
+            return {
+                'pertence_grupo': False,
+                'grupo_id': None,
+                'numero_quiosque': 1,
+                'responsavel_principal': None,
+                'email_principal': None
+            }
+    
     def executar(self):
         """Executa a aplicação principal"""
         self.inicializar()
         self.renderizar_cabecalho()
+        
+        # Verificar se faz parte de um grupo de quiosques
+        if 'grupo_quiosques' in st.session_state:
+            grupo = st.session_state.grupo_quiosques
+            proximo_numero = grupo['contador'] + 1
+            
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); 
+                        color: white; padding: 1rem; border-radius: 10px; 
+                        margin: 10px 0; text-align: center; border: 2px solid #4a5568;">
+                <h3 style="margin: 0; color: white;">Quiosque {proximo_numero}</h3>
+            </div>
+            """, unsafe_allow_html=True)
         
         # Verificar erros anteriores
         if st.session_state.get('show_errors', False):
