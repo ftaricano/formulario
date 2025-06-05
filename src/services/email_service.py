@@ -13,19 +13,29 @@ class EmailService:
     def __init__(self):
         # Configurar SendGrid API Key
         # Pode ser definida como variável de ambiente ou secrets do Streamlit
-        self.api_key = (
-            os.getenv('SENDGRID_API_KEY') or 
-            st.secrets.get('SENDGRID_API_KEY') or
-            st.secrets.get('sendgrid', {}).get('api_key')
-        )
+        api_key_from_secrets = None
+        try:
+            if hasattr(st, 'secrets'):
+                api_key_from_secrets = (
+                    st.secrets.get('SENDGRID_API_KEY') or
+                    st.secrets.get('sendgrid', {}).get('api_key')
+                )
+        except:
+            pass
+            
+        self.api_key = os.getenv('SENDGRID_API_KEY') or api_key_from_secrets
         
         if not self.api_key:
             raise ValueError("SENDGRID_API_KEY não encontrada. Configure como variável de ambiente ou secrets do Streamlit.")
         
         self.client = SendGridAPIClient(api_key=self.api_key)
         
-        # Configurações padrão (com fallback para secrets e variáveis de ambiente)
-        sendgrid_config = st.secrets.get('sendgrid', {})
+        # Configurações padrão (com fallback para secrets apenas se necessário)
+        # Primeiro tentar variáveis de ambiente, depois secrets (se disponível)
+        try:
+            sendgrid_config = st.secrets.get('sendgrid', {}) if hasattr(st, 'secrets') else {}
+        except:
+            sendgrid_config = {}
         
         # Buscar configurações nas variáveis de ambiente primeiro, depois nos secrets
         self.from_email = (
