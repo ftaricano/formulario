@@ -24,11 +24,24 @@ class EmailService:
         
         self.client = SendGridAPIClient(api_key=self.api_key)
         
-        # Configurações padrão (com fallback para secrets)
+        # Configurações padrão (com fallback para secrets e variáveis de ambiente)
         sendgrid_config = st.secrets.get('sendgrid', {})
-        self.from_email = sendgrid_config.get('from_email', "noreply@orlario.com.br")
-        self.to_email = sendgrid_config.get('email_destino', "solicitacoes@orlario.com.br")
-        self.from_name = sendgrid_config.get('from_name', "ORLA RIO - Formulários")
+        
+        # Buscar configurações nas variáveis de ambiente primeiro, depois nos secrets
+        self.from_email = (
+            os.getenv('SENDGRID_FROM_EMAIL') or
+            sendgrid_config.get('from_email', "noreply@cpzseg.com.br")
+        )
+        
+        self.to_email = (
+            os.getenv('SENDGRID_EMAIL_DESTINO') or
+            sendgrid_config.get('email_destino', "informe@cpzseg.com.br")
+        )
+        
+        self.from_name = (
+            os.getenv('SENDGRID_FROM_NAME') or
+            sendgrid_config.get('from_name', "Grupo CPZ - Formulários")
+        )
         self.subject = "Nova Solicitação - Seguro Incêndio Conteúdos"
     
     def enviar_formulario(self, dados_formulario: Dict[str, Any], arquivos: List[Any] = None) -> bool:
