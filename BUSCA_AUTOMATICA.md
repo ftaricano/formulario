@@ -6,13 +6,14 @@ Foi implementada uma funcionalidade de **busca automática** para os campos de C
 
 ## ✨ Funcionalidades Implementadas
 
-### 🏢 CNPJ - Busca Automática
+### 🏢 CNPJ - Busca Automática Imperceptível
 - **Trigger**: Dispara automaticamente quando o usuário digita um CNPJ válido (formato: 00.000.000/0000-00)
 - **Validação**: Verifica se o CNPJ está no formato correto antes de fazer a busca
 - **Resultado**: Preenche automaticamente o campo "Razão Social"
-- **Feedback**: Exibe mensagem de sucesso ou informação se não encontrado
+- **Feedback**: Busca totalmente silenciosa - sem spinners, mensagens ou notificações
+- **Indicação Visual**: Sutil borda verde no campo durante a busca
 
-### 📍 CEP - Busca Automática  
+### 📍 CEP - Busca Automática Imperceptível  
 - **Trigger**: Dispara automaticamente quando o usuário digita um CEP válido (formato: 00000-000)
 - **Validação**: Verifica se o CEP está no formato correto antes de fazer a busca
 - **Resultado**: Preenche automaticamente os campos:
@@ -20,15 +21,17 @@ Foi implementada uma funcionalidade de **busca automática** para os campos de C
   - Bairro  
   - Cidade
   - Estado
-- **Feedback**: Exibe mensagem de sucesso ou informação se não encontrado
+- **Feedback**: Busca totalmente silenciosa - sem spinners, mensagens ou notificações
+- **Indicação Visual**: Sutil borda verde no campo durante a busca
 
 ## 🔧 Melhorias Técnicas
 
 ### Performance e UX
 - **Prevenção de buscas duplicadas**: Sistema de cache que evita fazer a mesma busca múltiplas vezes
 - **Validação prévia**: Só faz a busca se o formato estiver correto
-- **Limpeza automática**: Remove o cache quando o usuário altera o valor do campo
-- **Feedback visual**: Indicadores visuais com ícones e mensagens informativas
+- **Limpeza automática**: Remove o cache e dados anteriores quando o usuário altera o valor do campo
+- **Feedback visual sutil**: Apenas uma discreta borda verde durante a busca - sem mensagens ou spinners
+- **Busca imperceptível**: Zero interrupção na experiência do usuário
 
 ### Compatibilidade
 - **Métodos antigos mantidos**: Os métodos de busca com botão foram mantidos para compatibilidade
@@ -37,7 +40,23 @@ Foi implementada uma funcionalidade de **busca automática** para os campos de C
 ## 📝 Arquivos Modificados
 
 ### 1. `src/components/form_sections.py`
-- **Método `render_field_with_search()`**: Removida lógica dos botões, implementada busca automática
+- **Método `render_field_with_search()`**: Busca automática totalmente imperceptível
+- **Métodos `handle_cnpj_search_auto()` e `handle_cep_search_auto()`**: Removidos spinners e mensagens
+- **Feedback visual sutil**: Borda verde discreta durante a busca
+
+## 🔄 Última Atualização - Busca Imperceptível
+
+### O que mudou:
+- **Removidos todos os spinners e mensagens** de busca automática
+- **Adicionado feedback visual discreto**: Apenas uma sutil borda verde no campo durante a busca
+- **Limpeza automática melhorada**: Remove dados anteriores quando o usuário altera os campos
+- **Experiência totalmente fluida**: O usuário só percebe que os campos são preenchidos automaticamente
+
+### Benefícios:
+- ✅ **Zero interrupção** na experiência do usuário
+- ✅ **Busca transparente** - funciona nos bastidores
+- ✅ **Interface limpa** - sem popups ou mensagens desnecessárias  
+- ✅ **Performance otimizada** - só recarrega a página quando encontra dados
 - **Novos métodos**:
   - `handle_cnpj_search_auto()`: Busca automática de CNPJ
   - `handle_cep_search_auto()`: Busca automática de CEP

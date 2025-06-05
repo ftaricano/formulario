@@ -119,14 +119,14 @@ class FormularioApp:
         """Renderiza seção de identificação do quiosque"""
         FormSectionRenderer.render_section_header(
             "▪ Identificação do Quiosque",
-            "Informe os dados do estabelecimento que será segurado"
+            "Informe os dados do estabelecimento que será segurado."
         )
         
-        # CNPJ com busca automática
+        # CNPJ com busca automática silenciosa
         cnpj, cnpj_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CNPJ *",
             field_name="cnpj",
-            help_text="Digite o CNPJ (14 dígitos) - A busca será feita automaticamente",
+            help_text="Digite o CNPJ (14 dígitos) - A razão social será preenchida automaticamente",
             placeholder="00.000.000/0000-00"
         )
         
@@ -134,15 +134,15 @@ class FormularioApp:
         razao_social = st.text_input(
             "▪ Razão Social",
             value=st.session_state.get('razao_social_busca', ''),
-            help="Preenchido automaticamente após digitar o CNPJ",
+            help="Preenchido automaticamente quando um CNPJ válido é digitado",
             key="razao_social"
         )
         
-        # CEP com busca automática
+        # CEP com busca automática silenciosa
         cep, cep_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CEP *",
             field_name="cep",
-            help_text="Digite o CEP no formato 00000-000 - A busca será feita automaticamente",
+            help_text="Digite o CEP no formato 00000-000 - O endereço será preenchido automaticamente",
             placeholder="00000-000"
         )
         
@@ -178,14 +178,12 @@ class FormularioApp:
             value=st.session_state.get('estado_busca', ''),
             key="estado"
         )
-        
-        # Buscas automáticas são processadas dentro do render_field_with_search
     
     def renderizar_identificacao_responsavel(self):
         """Renderiza seção de identificação do responsável"""
         FormSectionRenderer.render_section_header(
             "▪ Identificação do Responsável",
-            "Dados da pessoa responsável pelo seguro"
+            "Dados da pessoa responsável pelo seguro."
         )
         
         cpf = st.text_input("▪ CPF *", placeholder="000.000.000-00", key="cpf")
@@ -197,7 +195,7 @@ class FormularioApp:
         """Renderiza seção de seleção de planos"""
         FormSectionRenderer.render_section_header(
             "▪ Seleção do Plano",
-            "Escolha uma das opções de cobertura disponíveis"
+            "Escolha uma das opções de cobertura disponíveis."
         )
         
         # Criar opções formatadas

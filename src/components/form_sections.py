@@ -10,7 +10,22 @@ class FormSectionRenderer:
     @staticmethod
     def render_field_with_search(label: str, field_name: str, 
                                 help_text: str = "", placeholder: str = "") -> Tuple[str, bool]:
-        """Renderiza campo de texto com busca automática ao completar digitação"""
+        """Renderiza campo de texto com busca automática silenciosa"""
+        # Indicação visual sutil durante a busca
+        search_status_key = f"{field_name}_searching"
+        is_searching = st.session_state.get(search_status_key, False)
+        
+        # Aplicar classe CSS para feedback visual sutil quando buscando
+        if is_searching:
+            st.markdown("""
+            <style>
+            div[data-testid="stTextInput"] input[aria-label*="%s"] {
+                border-left: 3px solid #28a745 !important;
+                transition: border-left-color 0.3s ease;
+            }
+            </style>
+            """ % field_name.upper(), unsafe_allow_html=True)
+        
         # Campo de texto normal
         value = st.text_input(
             label,
@@ -34,20 +49,34 @@ class FormSectionRenderer:
                 keys_to_remove = [k for k in st.session_state.keys() if k.startswith('cnpj_searched_')]
                 for key in keys_to_remove:
                     del st.session_state[key]
+                # Limpar dados da busca anterior
+                if 'razao_social_busca' in st.session_state:
+                    del st.session_state['razao_social_busca']
             elif field_name == 'cep':
                 # Remover flags de busca anterior para permitir nova busca
                 keys_to_remove = [k for k in st.session_state.keys() if k.startswith('cep_searched_')]
                 for key in keys_to_remove:
                     del st.session_state[key]
+                # Limpar dados da busca anterior
+                campos_busca = ['logradouro_busca', 'bairro_busca', 'cidade_busca', 'estado_busca']
+                for campo in campos_busca:
+                    if campo in st.session_state:
+                        del st.session_state[campo]
             
             # Se o campo tem valor e é válido, fazer busca automática
             if value.strip():
                 if field_name == 'cnpj' and FormValidator.validar_cnpj(value):
                     search_triggered = True
+                    st.session_state[search_status_key] = True
                     ApiSearchHandler.handle_cnpj_search_auto(value)
                 elif field_name == 'cep' and FormValidator.validar_cep(value):
                     search_triggered = True
+                    st.session_state[search_status_key] = True
                     ApiSearchHandler.handle_cep_search_auto(value)
+            else:
+                # Limpar status de busca se campo ficar vazio
+                if search_status_key in st.session_state:
+                    del st.session_state[search_status_key]
         
         return value, search_triggered
     
@@ -240,44 +269,54 @@ class ApiSearchHandler:
     
     @staticmethod
     def handle_cnpj_search_auto(cnpj: str):
-        """Manipula busca automática de CNPJ"""
+        """Manipula busca automática de CNPJ de forma imperceptível"""
         # Verificar se já foi buscado para evitar buscas repetidas
         search_key = f"cnpj_searched_{cnpj}"
         if st.session_state.get(search_key, False):
             return
             
         if cnpj and FormValidator.validar_cnpj(cnpj):
-            with st.spinner("🔍 Buscando dados do CNPJ automaticamente..."):
-                razao_social = ApiService.buscar_cnpj(cnpj)
-                if razao_social:
-                    st.session_state['razao_social_busca'] = razao_social
-                    st.session_state[search_key] = True
-                    st.success(f"✅ CNPJ encontrado automaticamente: {razao_social}")
-                    st.rerun()
-                else:
-                    st.session_state[search_key] = True
-                    st.info("ℹ️ CNPJ não encontrado na base de dados")
+            # Busca totalmente silenciosa - sem spinners ou mensagens
+            razao_social = ApiService.buscar_cnpj(cnpj)
+            if razao_social:
+                st.session_state['razao_social_busca'] = razao_social
+                st.session_state[search_key] = True
+            else:
+                st.session_state[search_key] = True
+            
+            # Limpar status de busca
+            if 'cnpj_searching' in st.session_state:
+                del st.session_state['cnpj_searching']
+            
+            # Recarregar apenas se encontrou dados
+            if razao_social:
+                st.rerun()
     
     @staticmethod
     def handle_cep_search_auto(cep: str):
-        """Manipula busca automática de CEP"""
+        """Manipula busca automática de CEP de forma imperceptível"""
         # Verificar se já foi buscado para evitar buscas repetidas
         search_key = f"cep_searched_{cep}"
         if st.session_state.get(search_key, False):
             return
             
         if cep and FormValidator.validar_cep(cep):
-            with st.spinner("🔍 Buscando endereço automaticamente..."):
-                endereco = ApiService.buscar_cep(cep)
+            # Busca totalmente silenciosa - sem spinners ou mensagens
+            endereco = ApiService.buscar_cep(cep)
+            
+            if endereco:
+                # Armazenar dados do endereço com chaves específicas
+                for campo, valor in endereco.items():
+                    st.session_state[f'{campo}_busca'] = valor
                 
-                if endereco:
-                    # Armazenar dados do endereço com chaves específicas
-                    for campo, valor in endereco.items():
-                        st.session_state[f'{campo}_busca'] = valor
-                    
-                    st.session_state[search_key] = True
-                    st.success("✅ Endereço encontrado e preenchido automaticamente")
-                    st.rerun()
-                else:
-                    st.session_state[search_key] = True
-                    st.info("ℹ️ CEP não encontrado") 
+                st.session_state[search_key] = True
+            else:
+                st.session_state[search_key] = True
+            
+            # Limpar status de busca
+            if 'cep_searching' in st.session_state:
+                del st.session_state['cep_searching']
+            
+            # Recarregar apenas se encontrou dados
+            if endereco:
+                st.rerun() 
