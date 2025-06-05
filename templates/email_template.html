@@ -220,32 +220,63 @@
 <body>
     <div class="container">
         <div class="header">
+            {% if grupo_info.pertence_grupo %}
+            <h1>🏪 Grupo de Quiosques - Quiosque {{grupo_info.numero_quiosque}}</h1>
+            <p>Seguro Incêndio para Conteúdos | ID: {{grupo_info.grupo_id}}</p>
+            {% else %}
             <h1>Nova Solicitação Recebida</h1>
             <p>Seguro Incêndio para Conteúdos</p>
+            {% endif %}
         </div>
         
         <div class="content">
             {% if grupo_info.pertence_grupo %}
-            <div class="section" style="background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); color: white; margin: 0;">
-                <h2 class="section-title" style="color: white; border-bottom-color: rgba(255,255,255,0.3);">🏪 Quiosque em Grupo</h2>
+            <!-- Banner de Destaque para Grupo -->
+            <div style="background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); color: white; padding: 20px; margin: 0; text-align: center; border-bottom: 4px solid #e55100;">
+                <div style="font-size: 24px; font-weight: bold; margin-bottom: 8px;">
+                    🏪 QUIOSQUE PERTENCE A UM GRUPO
+                </div>
+                <div style="font-size: 16px; opacity: 0.9;">
+                    Este é um dos quiosques de uma solicitação múltipla
+                </div>
+            </div>
+            
+            <div class="section" style="background: linear-gradient(135deg, #1a365d 0%, #2a4a6b 100%); color: white; margin: 0; padding: 25px;">
+                <h2 class="section-title" style="color: #ffd700; border-bottom-color: rgba(255,215,0,0.4); font-size: 22px;">📋 Informações do Grupo</h2>
                 <div class="data-grid">
-                    <div class="data-item" style="background-color: rgba(255,255,255,0.1); border-left-color: white;">
-                        <div class="data-label" style="color: rgba(255,255,255,0.8);">Número do Quiosque</div>
-                        <div class="data-value" style="color: white; font-size: 18px;">QUIOSQUE {{grupo_info.numero_quiosque}}</div>
+                    <div class="data-item" style="background-color: rgba(255,255,255,0.15); border-left: 4px solid #ffd700; border-radius: 8px;">
+                        <div class="data-label" style="color: #ffd700; font-weight: bold; font-size: 13px;">NÚMERO DO QUIOSQUE</div>
+                        <div class="data-value" style="color: #ffffff; font-size: 20px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
+                            🏪 QUIOSQUE {{grupo_info.numero_quiosque}}
+                        </div>
                     </div>
-                    <div class="data-item" style="background-color: rgba(255,255,255,0.1); border-left-color: white;">
-                        <div class="data-label" style="color: rgba(255,255,255,0.8);">ID do Grupo</div>
-                        <div class="data-value" style="color: white; font-size: 18px;">{{grupo_info.grupo_id}}</div>
+                    <div class="data-item" style="background-color: rgba(255,215,0,0.2); border-left: 4px solid #ffd700; border-radius: 8px;">
+                        <div class="data-label" style="color: #1a365d; font-weight: bold; font-size: 13px;">ID DO GRUPO</div>
+                        <div class="data-value" style="color: #1a365d; font-size: 18px; font-weight: bold; font-family: 'Courier New', monospace; background-color: rgba(255,255,255,0.9); padding: 8px; border-radius: 6px; text-align: center;">
+                            {{grupo_info.grupo_id}}
+                        </div>
                     </div>
                 </div>
                 {% if grupo_info.responsavel_principal and grupo_info.responsavel_principal != nome_completo %}
-                <div class="address-full" style="background-color: rgba(255,255,255,0.1); border-left-color: white; margin-top: 15px;">
-                    <div class="data-label" style="color: rgba(255,255,255,0.8);">Responsável Principal do Grupo</div>
-                    <div class="data-value" style="color: white;">
-                        {{grupo_info.responsavel_principal}} ({{grupo_info.email_principal}})
+                <div style="background-color: rgba(255,215,0,0.15); border-left: 4px solid #ffd700; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                    <div class="data-label" style="color: #ffd700; font-weight: bold; font-size: 13px;">RESPONSÁVEL PRINCIPAL DO GRUPO</div>
+                    <div class="data-value" style="color: #ffffff; font-size: 16px; margin-top: 8px;">
+                        👤 {{grupo_info.responsavel_principal}}<br>
+                        📧 {{grupo_info.email_principal}}
                     </div>
                 </div>
                 {% endif %}
+                
+                <!-- Aviso importante para a equipe -->
+                <div style="background-color: rgba(255,193,7,0.2); border: 2px solid #ffc107; border-radius: 10px; padding: 20px; margin-top: 20px; text-align: center;">
+                    <div style="color: #ffc107; font-size: 16px; font-weight: bold; margin-bottom: 8px;">
+                        ⚠️ ATENÇÃO - SOLICITAÇÃO EM GRUPO
+                    </div>
+                    <div style="color: #ffffff; font-size: 14px; line-height: 1.5;">
+                        Este quiosque faz parte de uma solicitação múltipla.<br>
+                        <strong>Todos os quiosques do mesmo grupo devem ser processados juntos para cobrança única.</strong>
+                    </div>
+                </div>
             </div>
             {% endif %}
             

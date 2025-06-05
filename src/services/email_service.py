@@ -69,11 +69,18 @@ class EmailService:
             # Carregar e processar template
             html_content = self._processar_template(dados_formulario)
             
+            # Determinar assunto do email baseado se é grupo ou não
+            grupo_info = dados_formulario.get('grupo_info', {})
+            if grupo_info.get('pertence_grupo', False):
+                subject = f"🏪 Grupo de Quiosques - Quiosque {grupo_info.get('numero_quiosque', 1)} | ID: {grupo_info.get('grupo_id', 'N/A')}"
+            else:
+                subject = self.subject
+            
             # Criar email
             message = Mail(
                 from_email=(self.from_email, self.from_name),
                 to_emails=self.to_email,
-                subject=self.subject,
+                subject=subject,
                 html_content=html_content
             )
             

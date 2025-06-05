@@ -540,17 +540,19 @@ class FormularioApp:
                                     st.rerun()
                                 else:
                                     # Finalização de grupo - último quiosque (incluir_outro = False mas grupo existe)
-                                    st.session_state.formulario_enviado = True
-                                    # Marcar que foi envio com grupo para mostrar botão de nova solicitação
-                                    st.session_state.foi_envio_com_grupo = True
-                                    
                                     primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
                                     contador = st.session_state.grupo_quiosques['contador'] if 'grupo_quiosques' in st.session_state else 1
                                     
-                                    st.success(f"### ✓ Grupo finalizado com sucesso, {primeiro_nome}!")
-                                    st.success(f"**■ Total de {contador} quiosques enviados!**")
-                                    st.info("▪ **Nossa equipe analisará suas solicitações e entrará em contato em breve.**")
-                                    st.rerun()  # Recarregar para mostrar o botão de nova solicitação
+                                    # Marcar que acabou de finalizar o grupo
+                                    st.session_state.grupo_finalizado = True
+                                    st.session_state.primeiro_nome_grupo = primeiro_nome
+                                    st.session_state.total_quiosques_grupo = contador
+                                    
+                                    # Scroll ao topo
+                                    st.session_state.scroll_to_top = True
+                                    
+                                    # Rerun para mostrar tela de confirmação
+                                    st.rerun()
                             else:
                                 # Sucesso final - formulário normal (sem grupo)
                                 primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
@@ -915,13 +917,47 @@ class FormularioApp:
                     # Resetar formulário completamente
                     self._resetar_formulario()
                     
-                    # Marcar scroll ao topo
-                    st.session_state.scroll_to_top = True
+                    # Forçar refresh completo da página
+                    st.markdown("""
+                    <script>
+                        setTimeout(function() {
+                            window.location.reload(true);
+                        }, 100);
+                    </script>
+                    """, unsafe_allow_html=True)
                     
-                    # Rerun para voltar ao formulário limpo
+                    # Também fazer rerun como fallback
                     st.rerun()
             
             # Parar execução aqui - só continua após clicar no botão
+            return
+        
+        # Verificar se acabou de finalizar um grupo de quiosques (tela de confirmação)
+        if st.session_state.get('grupo_finalizado', False):
+            # Limpar flag
+            st.session_state.grupo_finalizado = False
+            
+            # Obter dados salvos
+            primeiro_nome = st.session_state.get('primeiro_nome_grupo', '')
+            total_quiosques = st.session_state.get('total_quiosques_grupo', 1)
+            
+            # Tela de confirmação estilizada para finalização do grupo
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 2rem; border-radius: 15px; 
+                        margin: 20px 0; text-align: center; 
+                        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);">
+                <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">🎉 Todos os Quiosques Cadastrados!</h1>
+                <h2 style="margin: 0 0 1.5rem 0; font-size: 1.3rem;">Parabéns, {primeiro_nome}!</h2>
+                <p style="margin: 0 0 1.5rem 0; font-size: 1.1rem; line-height: 1.6;">
+                    <strong>✓ Total de {total_quiosques} quiosques enviados com sucesso!</strong><br>
+                    Todas as suas solicitações foram processadas e enviadas.<br>
+                    <strong>▪ Nossa equipe analisará suas solicitações e entrará em contato em breve.</strong>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Parar execução aqui para manter o pop-up visível
             return
         
         # Verificar se acabou de enviar um quiosque do grupo (tela de confirmação)
