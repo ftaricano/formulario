@@ -115,7 +115,7 @@ class EquipamentosSection:
         st.markdown("---")
         col1, col2, col3 = st.columns([1, 1, 1])
         
-        with col1:
+        with col2:
             if st.button("➕ Adicionar Item", key="add_equipamento", use_container_width=True):
                 EquipamentosSection._adicionar_equipamento()
                 st.rerun()

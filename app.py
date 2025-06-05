@@ -433,67 +433,6 @@ class FormularioApp:
     
     def processar_envio(self):
         """Processa envio do formulário"""
-        # Verificar se formulário já foi enviado
-        if st.session_state.get('formulario_enviado', False):
-            # Mostrar mensagem de sucesso
-            st.success("✅ **Formulário enviado com sucesso!**")
-            st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
-            
-            # Verificar se foi enviado com "incluir outro quiosque" marcado
-            # Se foi com grupo, mostrar botão de nova solicitação
-            # Se foi normal, apenas mostrar mensagem para atualizar página
-            if st.session_state.get('foi_envio_com_grupo', False):
-                # Botão para nova solicitação (substitui o botão de enviar)
-                col1, col2, col3 = st.columns([1, 2, 1])
-                with col2:
-                    if st.button(
-                        "🔄 Clique aqui para fazer uma nova solicitação",
-                        use_container_width=True,
-                        type="secondary",
-                        key="nova_solicitacao"
-                    ):
-                        # Resetar formulário primeiro
-                        self._resetar_formulario()
-                        
-                        # Tentar forçar refresh com múltiplas abordagens
-                        timestamp = int(time.time())
-                        
-                        # Abordagem 1: Query params (se disponível)
-                        try:
-                            st.query_params.reset = timestamp
-                        except:
-                            try:
-                                st.experimental_set_query_params(reset=timestamp)
-                            except:
-                                pass
-                        
-                        # Abordagem 2: JavaScript direto no DOM
-                        st.markdown(f"""
-                        <script>
-                            // Forçar refresh imediato
-                            window.location.reload(true);
-                            
-                            // Fallback com redirect
-                            setTimeout(function() {{
-                                window.location.href = window.location.origin + window.location.pathname + '?r={timestamp}';
-                            }}, 200);
-                        </script>
-                        """, unsafe_allow_html=True)
-                        
-                        # Abordagem 3: components.html
-                        components.html("""
-                        <script>
-                            parent.location.reload(true);
-                        </script>
-                        """, height=0)
-                        
-                        # Forçar rerun como fallback final
-                        st.rerun()
-            else:
-                # Envio normal - apenas mostrar mensagem para atualizar página
-                st.info("📄 **Caso queira preencher outro formulário, atualize a página**")
-                
-            return
 
         # Botão de envio (só aparece se formulário ainda não foi enviado)
         # Checkbox para incluir outro quiosque
@@ -558,10 +497,6 @@ class FormularioApp:
                     if st.session_state.get('arquivos_upload'):
                         arquivos.extend(st.session_state.arquivos_upload)
                     
-                    # Adicionar foto da câmera se existir
-                    if st.session_state.get('foto_camera'):
-                        arquivos.append(st.session_state.foto_camera)
-                    
                     # Tentar enviar email
                     try:
                         email_service = EmailService()
@@ -575,16 +510,21 @@ class FormularioApp:
                                     # Continuação de grupo - não é o último quiosque
                                     primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
                                     contador = st.session_state.grupo_quiosques['contador'] if 'grupo_quiosques' in st.session_state else 1
-                                    
-                                    st.success(f"### ✓ Quiosque {contador} enviado com sucesso, {primeiro_nome}!")
-                                    st.success("**■ Dados do quiosque foram enviados!**")
-                                    st.info("▪ **Agora preencha os dados do próximo quiosque do mesmo grupo.**")
+                                    proximo_numero = contador + 1
                                     
                                     # Resetar formulário mas manter dados do grupo
                                     self._resetar_formulario_grupo()
                                     
-                                    # Aguardar um pouco e recarregar
-                                    time.sleep(1)
+                                    # Marcar que acabou de enviar um quiosque do grupo
+                                    st.session_state.quiosque_enviado_grupo = True
+                                    st.session_state.ultimo_contador = contador
+                                    st.session_state.proximo_numero = proximo_numero
+                                    st.session_state.primeiro_nome_enviado = primeiro_nome
+                                    
+                                    # Scroll ao topo
+                                    st.session_state.scroll_to_top = True
+                                    
+                                    # Rerun para mostrar tela de confirmação
                                     st.rerun()
                                 else:
                                     # Finalização de grupo - último quiosque (incluir_outro = False mas grupo existe)
@@ -600,16 +540,18 @@ class FormularioApp:
                                     st.info("▪ **Nossa equipe analisará suas solicitações e entrará em contato em breve.**")
                                     st.rerun()  # Recarregar para mostrar o botão de nova solicitação
                             else:
-                                # Sucesso final - marcar como enviado (comportamento original)
-                                st.session_state.formulario_enviado = True
-                                # Marcar que foi envio normal (sem grupo)
-                                st.session_state.foi_envio_com_grupo = False
-                                
+                                # Sucesso final - formulário normal (sem grupo)
                                 primeiro_nome = StringUtils.obter_primeiro_nome(dados.get('nome_completo', ''))
-                                st.success(f"### ✓ Obrigado, {primeiro_nome}!")
-                                st.success("**■ Sua solicitação foi enviada com sucesso!**")
-                                st.info("▪ **Nossa equipe analisará sua solicitação e entrará em contato em breve.**")
-                                st.rerun()  # Recarregar para mostrar mensagem de atualizar página
+                                
+                                # Marcar que acabou de enviar formulário normal
+                                st.session_state.formulario_enviado_normal = True
+                                st.session_state.primeiro_nome_normal = primeiro_nome
+                                
+                                # Scroll ao topo
+                                st.session_state.scroll_to_top = True
+                                
+                                # Rerun para mostrar tela de confirmação
+                                st.rerun()
                         else:
                             st.error("**■ Erro ao enviar solicitação**")
                             st.error("▪ Tente novamente ou entre em contato conosco.")
@@ -659,12 +601,7 @@ class FormularioApp:
                     'size_mb': round(arquivo.size / 1024 / 1024, 2)
                 })
         
-        # Adicionar foto da câmera se existir
-        if st.session_state.get('foto_camera'):
-            arquivos_info.append({
-                'name': 'Foto capturada pela câmera',
-                'size_mb': round(len(st.session_state.foto_camera.getvalue()) / 1024 / 1024, 2)
-            })
+
         
         # Preparar equipamentos
         equipamentos = []
@@ -718,13 +655,13 @@ class FormularioApp:
             'equipamentos', 'num_equipamentos',
             
             # Arquivos
-            'arquivos_upload', 'foto_camera',
+            'arquivos_upload',
             
             # Opções adicionais
             'incluir_outro_quiosque',
             
             # Controle do formulário
-            'formulario_enviado', 'show_errors',
+            'formulario_enviado', 'show_errors', 'scroll_to_top',
             
             # Dados do grupo
             'grupo_quiosques'
@@ -764,7 +701,7 @@ class FormularioApp:
             'equipamentos', 'num_equipamentos',
             
             # Arquivos
-            'arquivos_upload', 'foto_camera',
+            'arquivos_upload',
             
             # Opções adicionais
             'incluir_outro_quiosque',
@@ -811,6 +748,218 @@ class FormularioApp:
     def executar(self):
         """Executa a aplicação principal"""
         self.inicializar()
+        
+        # Adicionar âncora invisível no topo absoluto
+        st.markdown('<div id="topo-pagina" style="position: absolute; top: 0; left: 0; width: 1px; height: 1px;"></div>', unsafe_allow_html=True)
+        
+        # Verificar se deve fazer scroll ao topo (via localStorage ou session_state)
+        st.markdown("""
+        <script>
+            // Verificar se deve fazer scroll baseado no localStorage
+            if (localStorage.getItem('scroll_to_top_on_load') === 'true') {
+                // Limpar flag
+                localStorage.removeItem('scroll_to_top_on_load');
+                
+                // Função para forçar scroll ao topo de forma agressiva
+                function forcarScrollTopoReload() {
+                    // Método 1: Window scroll
+                    window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+                    
+                    // Método 2: Document scroll
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                    
+                    // Método 3: Scroll para elemento âncora
+                    const topoElement = document.getElementById('topo-pagina');
+                    if (topoElement) {
+                        topoElement.scrollIntoView({behavior: 'instant', block: 'start'});
+                    }
+                    
+                    // Método 4: Hash navigation
+                    window.location.hash = '#topo-pagina';
+                    setTimeout(() => {
+                        window.location.hash = '';
+                        window.scrollTo(0, 0);
+                    }, 50);
+                    
+                    // Método 5: Scroll manual de todos elementos scrolláveis
+                    const scrollableElements = document.querySelectorAll('*');
+                    scrollableElements.forEach(el => {
+                        if (el.scrollTop > 0) {
+                            el.scrollTop = 0;
+                        }
+                    });
+                }
+                
+                // Executar imediatamente
+                forcarScrollTopoReload();
+                
+                // Executar após DOM pronto
+                document.addEventListener('DOMContentLoaded', forcarScrollTopoReload);
+                
+                // Múltiplas tentativas agressivas
+                setTimeout(forcarScrollTopoReload, 10);
+                setTimeout(forcarScrollTopoReload, 50);
+                setTimeout(forcarScrollTopoReload, 100);
+                setTimeout(forcarScrollTopoReload, 200);
+                setTimeout(forcarScrollTopoReload, 300);
+                setTimeout(forcarScrollTopoReload, 500);
+                setTimeout(forcarScrollTopoReload, 800);
+                setTimeout(forcarScrollTopoReload, 1000);
+                setTimeout(forcarScrollTopoReload, 1500);
+                
+                // Observer para garantir scroll quando elementos mudarem
+                const observer = new MutationObserver(function() {
+                    setTimeout(forcarScrollTopoReload, 10);
+                });
+                observer.observe(document.body, {childList: true, subtree: true});
+                
+                // Desativar observer após 3 segundos
+                setTimeout(() => observer.disconnect(), 3000);
+            }
+        </script>
+        """, unsafe_allow_html=True)
+        
+        # Verificar se deve fazer scroll ao topo (session_state - fallback)
+        if st.session_state.get('scroll_to_top', False):
+            # Limpar flag
+            st.session_state.scroll_to_top = False
+            
+            # Componente HTML para scroll via session_state
+            components.html("""
+            <script>
+                function scrollTopoParent() {
+                    // Scroll na janela pai
+                    parent.window.scrollTo({top: 0, left: 0, behavior: 'instant'});
+                    parent.document.documentElement.scrollTop = 0;
+                    parent.document.body.scrollTop = 0;
+                    
+                    // Tentar scroll no elemento âncora
+                    const topoEl = parent.document.getElementById('topo-pagina');
+                    if (topoEl) {
+                        topoEl.scrollIntoView({behavior: 'instant', block: 'start'});
+                    }
+                    
+                    // Scroll em todos elementos scrolláveis do pai
+                    const allElements = parent.document.querySelectorAll('*');
+                    allElements.forEach(el => {
+                        if (el.scrollTop > 0) {
+                            el.scrollTop = 0;
+                        }
+                    });
+                }
+                
+                // Executar imediatamente
+                scrollTopoParent();
+                
+                // Múltiplas tentativas
+                setTimeout(scrollTopoParent, 10);
+                setTimeout(scrollTopoParent, 50);
+                setTimeout(scrollTopoParent, 100);
+                setTimeout(scrollTopoParent, 200);
+                setTimeout(scrollTopoParent, 300);
+                setTimeout(scrollTopoParent, 500);
+                setTimeout(scrollTopoParent, 800);
+                setTimeout(scrollTopoParent, 1000);
+            </script>
+            """, height=0)
+        
+        # Verificar se acabou de enviar um formulário normal (tela de confirmação)
+        if st.session_state.get('formulario_enviado_normal', False):
+            # Limpar flag
+            st.session_state.formulario_enviado_normal = False
+            
+            # Obter dados salvos
+            primeiro_nome = st.session_state.get('primeiro_nome_normal', '')
+            
+            # Tela de confirmação estilizada para formulário normal
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 2rem; border-radius: 15px; 
+                        margin: 20px 0; text-align: center; 
+                        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);">
+                <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">✅ Formulário Encaminhado com Sucesso!</h1>
+                <h2 style="margin: 0 0 1.5rem 0; font-size: 1.3rem;">Obrigado, {primeiro_nome}!</h2>
+                <p style="margin: 0 0 1.5rem 0; font-size: 1.1rem; line-height: 1.6;">
+                    Sua solicitação foi enviada e processada com sucesso.<br>
+                    <strong>▪ Nossa equipe analisará sua solicitação e entrará em contato em breve.</strong>
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Botão para preencher outro formulário
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button(
+                    "🔄 Preencher Outro Formulário",
+                    use_container_width=True,
+                    type="secondary",
+                    key="novo_formulario"
+                ):
+                    # Limpar dados da confirmação
+                    if 'primeiro_nome_normal' in st.session_state:
+                        del st.session_state['primeiro_nome_normal']
+                    
+                    # Resetar formulário completamente
+                    self._resetar_formulario()
+                    
+                    # Marcar scroll ao topo
+                    st.session_state.scroll_to_top = True
+                    
+                    # Rerun para voltar ao formulário limpo
+                    st.rerun()
+            
+            # Parar execução aqui - só continua após clicar no botão
+            return
+        
+        # Verificar se acabou de enviar um quiosque do grupo (tela de confirmação)
+        if st.session_state.get('quiosque_enviado_grupo', False):
+            # Limpar flag
+            st.session_state.quiosque_enviado_grupo = False
+            
+            # Obter dados salvos
+            contador = st.session_state.get('ultimo_contador', 1)
+            proximo_numero = st.session_state.get('proximo_numero', 2)
+            primeiro_nome = st.session_state.get('primeiro_nome_enviado', '')
+            
+            # Tela de confirmação estilizada
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 2rem; border-radius: 15px; 
+                        margin: 20px 0; text-align: center; 
+                        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);">
+                <h1 style="margin: 0 0 1rem 0; font-size: 2rem;">✅ Quiosque {contador} Enviado!</h1>
+                <h2 style="margin: 0 0 1.5rem 0; font-size: 1.3rem;">Parabéns, {primeiro_nome}!</h2>
+                <p style="margin: 0 0 1.5rem 0; font-size: 1.1rem; line-height: 1.6;">
+                    Os dados do quiosque {contador} foram enviados e processados com sucesso.<br>
+                    <strong>Próximo passo:</strong> Preencher os dados do Quiosque {proximo_numero} do mesmo grupo.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Botão nativo do Streamlit (muito mais confiável)
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                if st.button(
+                    f"➜ Continuar para o Quiosque {proximo_numero}",
+                    use_container_width=True,
+                    type="primary",
+                    key="continuar_proximo_quiosque"
+                ):
+                    # Limpar dados da confirmação
+                    for key in ['ultimo_contador', 'proximo_numero', 'primeiro_nome_enviado']:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    
+                    # Marcar scroll ao topo
+                    st.session_state.scroll_to_top = True
+                    
+                    # Rerun para continuar com formulário limpo
+                    st.rerun()
+            
+            # Parar execução aqui - só continua após clicar no botão
+            return
+        
         self.renderizar_cabecalho()
         
         # Verificar se faz parte de um grupo de quiosques
@@ -838,8 +987,113 @@ class FormularioApp:
         # Seleção de plano primeiro
         plano_selecionado = self.renderizar_selecao_plano()
         
+        # CSS para tornar seção de equipamentos responsiva em mobile
+        st.markdown("""
+        <style>
+        /* EQUIPAMENTOS - CSS responsivo para mobile */
+        @media (max-width: 767px) {
+            /* Cabeçalhos dos equipamentos sempre visíveis */
+            .stMarkdown strong {
+                font-size: 0.7rem !important;
+                display: block !important;
+                text-align: center !important;
+                color: #333 !important;
+                font-weight: bold !important;
+                margin-bottom: 5px !important;
+                background: rgba(240,240,240,0.8) !important;
+                padding: 3px 6px !important;
+                border-radius: 4px !important;
+            }
+            
+            /* Container principal das colunas de equipamentos */
+            .stHorizontal {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+                padding-bottom: 10px !important;
+                gap: 12px !important;
+            }
+            
+            /* Colunas individuais com largura fixa */
+            .stHorizontal > div {
+                flex: 0 0 auto !important;
+                min-width: fit-content !important;
+            }
+            
+            /* Coluna 1 - Tipo */
+            .stHorizontal > div:nth-child(1) {
+                min-width: 120px !important;
+                max-width: 120px !important;
+            }
+            
+            /* Coluna 2 - Descrição */
+            .stHorizontal > div:nth-child(2) {
+                min-width: 150px !important;
+                max-width: 150px !important;
+            }
+            
+            /* Coluna 3 - Valor */
+            .stHorizontal > div:nth-child(3) {
+                min-width: 100px !important;
+                max-width: 100px !important;
+            }
+            
+            /* Coluna 4 - Botão ação */
+            .stHorizontal > div:nth-child(4) {
+                min-width: 50px !important;
+                max-width: 50px !important;
+            }
+            
+            /* Inputs de texto menores */
+            .stTextInput input {
+                font-size: 0.75rem !important;
+                padding: 0.4rem !important;
+                height: 38px !important;
+            }
+            
+            /* Botões de ação menores */
+            .stButton button {
+                font-size: 0.9rem !important;
+                padding: 0.3rem !important;
+                height: 38px !important;
+                width: 100% !important;
+            }
+            
+            /* Scroll horizontal suave */
+            .stHorizontal::-webkit-scrollbar {
+                height: 6px !important;
+            }
+            
+            .stHorizontal::-webkit-scrollbar-track {
+                background: #f1f1f1 !important;
+                border-radius: 10px !important;
+            }
+            
+            .stHorizontal::-webkit-scrollbar-thumb {
+                background: #c1c1c1 !important;
+                border-radius: 10px !important;
+            }
+            
+            .stHorizontal::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8 !important;
+            }
+        }
+        
+        /* Indicador de scroll para equipamentos */
+        @media (max-width: 767px) {
+            .equipamentos-scroll-hint {
+                text-align: center !important;
+                font-size: 0.7rem !important;
+                color: #666 !important;
+                margin-top: 5px !important;
+                font-style: italic !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         # Agora renderizar equipamentos após seleção do plano
         equipamentos = EquipamentosSection.render()
+        
         
         # Upload de arquivos após equipamentos
         FormSectionRenderer.render_section_header(
@@ -850,13 +1104,13 @@ class FormularioApp:
         # Aviso simples sobre limites
         st.info("📋 **Limite de tamanho:** Máximo 10MB por arquivo | Máximo 25MB no total")
         
-        # CSS personalizado para traduzir textos do Streamlit
+        # CSS personalizado para ocultar botão de browse e personalizar área de upload
         st.markdown("""
         <style>
-        /* Limpar e traduzir file uploader */
+        /* Personalizar área de upload */
         .stFileUploader [data-testid="stFileUploaderDropzone"] {
             position: relative !important;
-            min-height: 100px !important;
+            min-height: 120px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -871,7 +1125,7 @@ class FormularioApp:
             background-color: #f5f5f5 !important;
         }
         
-        /* Esconder textos originais em inglês de forma limpa */
+        /* Esconder textos originais em inglês */
         .stFileUploader [data-testid="stFileUploaderDropzone"] > div,
         .stFileUploader [data-testid="stFileUploaderDropzone"] span,
         .stFileUploader [data-testid="stFileUploaderDropzone"] small,
@@ -882,146 +1136,39 @@ class FormularioApp:
         
         /* Texto principal em português - centralizado */
         .stFileUploader [data-testid="stFileUploaderDropzone"]::before {
-            content: "Arraste e solte arquivos aqui" !important;
+            content: "Clique aqui para anexar arquivos" !important;
             position: absolute !important;
             top: 50% !important;
             left: 50% !important;
             transform: translate(-50%, -50%) !important;
-            font-size: 1rem !important;
+            font-size: 1.1rem !important;
             color: #666666 !important;
             font-weight: 600 !important;
             pointer-events: none !important;
             z-index: 10 !important;
         }
         
-        /* Remover texto secundário da área de drop */
-        .stFileUploader [data-testid="stFileUploaderDropzone"]::after {
-            display: none !important;
-        }
-        
-        /* Reposicionar botão Browse files para baixo da área */
+        /* OCULTAR COMPLETAMENTE o botão Browse files */
         .stFileUploader button[kind="secondary"] {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%) !important;
-            color: white !important;
-            border: none !important;
-            border-radius: 8px !important;
-            padding: 0.75rem 1rem !important;
-            min-height: 55px !important;
-            width: 140px !important;
-            font-size: 0 !important;
-            position: relative !important;
-            margin: 0 0 0 auto !important;
-            display: block !important;
-            float: right !important;
-        }
-        
-        .stFileUploader button[kind="secondary"] span {
-            opacity: 0 !important;
-            font-size: 0 !important;
-        }
-        
-        .stFileUploader button[kind="secondary"]::after {
-            content: "Procurar Arquivos" !important;
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            font-size: 0.9rem !important;
-            font-weight: 600 !important;
-            color: white !important;
-            z-index: 10 !important;
-        }
-        
-        .stFileUploader button[kind="secondary"]:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-        }
-        
-        /* Traduzir botão da câmera de forma limpa */
-        .stCameraInput button {
-            position: relative !important;
-            font-size: 0 !important;
-        }
-        
-        .stCameraInput button span {
-            opacity: 0 !important;
-            font-size: 0 !important;
-        }
-        
-        .stCameraInput button::after {
-            content: "📷 Clique para tirar uma foto" !important;
-            position: absolute !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-            color: white !important;
-            z-index: 10 !important;
+            display: none !important;
         }
         </style>
         """, unsafe_allow_html=True)
         
-        # Tabs para organizar as opções
-        tab1, tab2 = st.tabs(["📁 Selecionar Arquivos", "📷 Tirar Foto"])
+        # Upload de arquivos apenas com drag & drop
+        arquivos_upload = st.file_uploader(
+            "Área de upload",
+            type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
+            accept_multiple_files=True,
+            key="arquivos_upload",
+            help="Tipos aceitos: JPG, JPEG, PNG, PDF, XLSX • Máximo: 10MB por arquivo",
+            label_visibility="collapsed"
+        )
         
-        with tab1:
-            st.markdown("**Selecione arquivos do seu dispositivo:**")
-            arquivos_upload = st.file_uploader(
-                "Arraste arquivos aqui ou clique para selecionar",
-                type=['jpg', 'jpeg', 'png', 'pdf', 'xlsx'],
-                accept_multiple_files=True,
-                key="arquivos_upload",
-                help="Tipos aceitos: JPG, JPEG, PNG, PDF, XLSX • Máximo: 10MB por arquivo"
-            )
-        
-        with tab2:
-            st.markdown("**Tire uma foto diretamente:**")
-            
-            # Controle de estado para mostrar camera input
-            if 'mostrar_camera' not in st.session_state:
-                st.session_state.mostrar_camera = False
-            
-            # Botão para ativar câmera
-            if not st.session_state.mostrar_camera:
-                if st.button("📷 Ativar Câmera", use_container_width=True, type="secondary"):
-                    st.session_state.mostrar_camera = True
-                    st.rerun()
-                st.info("💡 Clique no botão acima para ativar a câmera e tirar uma foto")
-            else:
-                # Mostrar camera input e botão para fechar
-                col1, col2 = st.columns([4, 1])
-                with col1:
-                    foto_camera = st.camera_input(
-                        "Capturar imagem",
-                        key="foto_camera",
-                        help="Tire uma foto dos equipamentos ou do local"
-                    )
-                with col2:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    if st.button("❌", help="Fechar câmera", use_container_width=True):
-                        st.session_state.mostrar_camera = False
-                        # Limpar foto se existir
-                        if 'foto_camera' in st.session_state:
-                            del st.session_state.foto_camera
-                        st.rerun()
-            
-            # Definir foto_camera como None se câmera não está ativa
-            if not st.session_state.mostrar_camera:
-                foto_camera = None
-            else:
-                foto_camera = st.session_state.get('foto_camera', None)
-        
-        # Combinar todos os arquivos válidos
+        # Usar apenas arquivos de upload
         arquivos = []
-        
-        # Adicionar arquivos de upload
         if arquivos_upload:
             arquivos.extend(arquivos_upload)
-        
-        # Adicionar foto da câmera se existir
-        if foto_camera:
-            arquivos.append(foto_camera)
         
         # Cálculo do valor por último
         premio_calculado = self.renderizar_calculo_vigencia(plano_selecionado)
