@@ -108,59 +108,158 @@ class EquipamentosSection:
         if 'equipamentos' not in st.session_state:
             st.session_state.equipamentos = [{"tipo": "", "descricao": "", "valor": ""}]
         
-        # Cabeçalhos da tabela
-        col1, col2, col3, col4 = st.columns([3, 4, 2, 1])
-        with col1:
-            st.markdown("**Tipo**")
-        with col2:
-            st.markdown("**Descrição**")
-        with col3:
-            st.markdown("**Valor (R$)**")
+        # CSS para layout intercalado único
+        st.markdown("""
+        <style>
+        /* Layout intercalado para todas as telas */
+        .equipamento-mobile-item {
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 8px !important;
+            padding: 0 12px 12px 12px !important;
+            margin-bottom: 10px !important;
+            background: #fafafa !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
         
-        # Renderizar equipamentos
+        /* Remover espaçamento acima do cabeçalho do equipamento */
+        .equipamento-mobile-item .stMarkdown:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item .stMarkdown:first-child p {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item > div:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item > * {
+            margin-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item > *:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        /* CSS específico para remover espaçamento do Streamlit */
+        .equipamento-mobile-item [data-testid="stMarkdown"] {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item [data-testid="stMarkdown"]:first-child {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .equipamento-mobile-item [data-testid="stMarkdown"] p {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .mobile-field-group {
+            margin-bottom: 4px !important;
+        }
+        
+        .mobile-field-label {
+            font-weight: bold !important;
+            font-size: 0.85rem !important;
+            color: #333 !important;
+            margin-bottom: 1px !important;
+            display: block !important;
+            background: transparent !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+        }
+        
+        .mobile-remove-button {
+            text-align: center !important;
+            margin-top: 10px !important;
+            padding-top: 8px !important;
+            border-top: 1px solid #e0e0e0 !important;
+        }
+        
+        /* Diminuir espaçamento dos inputs */
+        .mobile-field-group .stTextInput > div {
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        .mobile-field-group .stTextInput input {
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+            padding: 0.4rem !important;
+        }
+        
+        /* Remover espaçamento extra entre elementos */
+        .mobile-field-group .stTextInput {
+            margin-bottom: 0 !important;
+            margin-top: 0 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Renderizar equipamentos - Layout intercalado único
         for i, equipamento in enumerate(st.session_state.equipamentos):
-            col1, col2, col3, col4 = st.columns([3, 4, 2, 1])
+            st.markdown(f'<div class="equipamento-mobile-item">', unsafe_allow_html=True)
             
-            with col1:
-                tipo = st.text_input(
-                    f"Tipo {i+1}",
-                    value=equipamento.get("tipo", ""),
-                    placeholder="Ex: Geladeira, Microondas, etc.",
-                    key=f"tipo_equip_{i}",
-                    label_visibility="collapsed"
-                )
-                st.session_state.equipamentos[i]["tipo"] = tipo
+            # Cabeçalho do item
+            st.markdown(f'<div style="margin:0; padding:12px 0 8px 0; font-weight:bold;">Equipamento {i+1}</div>', unsafe_allow_html=True)
             
-            with col2:
-                descricao = st.text_input(
-                    f"Descrição {i+1}",
-                    value=equipamento.get("descricao", ""),
-                    placeholder="Marca/Modelo",
-                    key=f"desc_equip_{i}",
-                    label_visibility="collapsed"
-                )
-                st.session_state.equipamentos[i]["descricao"] = descricao
+            # Campo Tipo
+            st.markdown('<div class="mobile-field-group">', unsafe_allow_html=True)
+            st.markdown('<div class="mobile-field-label">Tipo</div>', unsafe_allow_html=True)
+            tipo = st.text_input(
+                f"Tipo {i+1}",
+                value=equipamento.get("tipo", ""),
+                placeholder="Ex: Geladeira, Microondas, etc.",
+                key=f"tipo_equip_{i}",
+                label_visibility="collapsed"
+            )
+            st.session_state.equipamentos[i]["tipo"] = tipo
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            with col3:
-                valor = st.text_input(
-                    f"Valor {i+1}",
-                    value=equipamento.get("valor", ""),
-                    placeholder="R$ 1.000,00",
-                    key=f"valor_equip_{i}",
-                    label_visibility="collapsed"
-                )
-                st.session_state.equipamentos[i]["valor"] = valor
+            # Campo Descrição
+            st.markdown('<div class="mobile-field-group">', unsafe_allow_html=True)
+            st.markdown('<div class="mobile-field-label">Descrição</div>', unsafe_allow_html=True)
+            descricao = st.text_input(
+                f"Descrição {i+1}",
+                value=equipamento.get("descricao", ""),
+                placeholder="Marca/Modelo",
+                key=f"desc_equip_{i}",
+                label_visibility="collapsed"
+            )
+            st.session_state.equipamentos[i]["descricao"] = descricao
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            with col4:
-                # Só mostrar botão de remover se houver mais de um item
-                if len(st.session_state.equipamentos) > 1:
-                    if st.button("🗑️", key=f"remove_equip_{i}", 
-                               help=f"Remover item {i+1}", 
-                               use_container_width=True):
-                        EquipamentosSection._remover_equipamento(i)
-                        st.rerun()
-                else:
-                    st.markdown("")  # Espaço vazio quando só há um item
+            # Campo Valor
+            st.markdown('<div class="mobile-field-group">', unsafe_allow_html=True)
+            st.markdown('<div class="mobile-field-label">Valor (R$)</div>', unsafe_allow_html=True)
+            valor = st.text_input(
+                f"Valor {i+1}",
+                value=equipamento.get("valor", ""),
+                placeholder="R$ 1.000,00",
+                key=f"valor_equip_{i}",
+                label_visibility="collapsed"
+            )
+            st.session_state.equipamentos[i]["valor"] = valor
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Botão remover
+            if len(st.session_state.equipamentos) > 1:
+                st.markdown('<div class="mobile-remove-button">', unsafe_allow_html=True)
+                if st.button(f"🗑️ Remover Equipamento {i+1}", key=f"remove_equip_{i}", 
+                           help=f"Remover item {i+1}", use_container_width=True):
+                    EquipamentosSection._remover_equipamento(i)
+                    st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # Botões de controle
         st.markdown("---")
