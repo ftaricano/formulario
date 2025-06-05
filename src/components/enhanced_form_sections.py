@@ -125,9 +125,9 @@ class EnhancedEquipamentosSection:
     def _render_header(self):
         """Renderiza cabeçalho da seção"""
         st.markdown("""
-        <div class="section-title">▪ Relação de Bens e Equipamentos Sem Nota Fiscal</div>
+                    <div class="section-title">▪ Relação de Bens e Equipamentos sem Nota Fiscal a serem Incluídos</div>
         <div class="section-description">
-            Adicione todos os bens e equipamentos sem nota fiscal. 
+            Adicione todos os bens e equipamentos sem nota fiscal a serem incluídos no seguro. 
             Use o botão ➕ para adicionar mais itens.
         </div>
         """, unsafe_allow_html=True)

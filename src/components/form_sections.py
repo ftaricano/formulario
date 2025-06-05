@@ -71,8 +71,8 @@ class EquipamentosSection:
         """Renderiza seção completa de equipamentos"""
         st.markdown("")
         FormSectionRenderer.render_section_header(
-            "▪ Relação de Bens e Equipamentos Sem Nota Fiscal (Opcional)",
-            "Adicione bens e equipamentos sem nota fiscal, caso existam. Use os botões para adicionar ou remover itens."
+            "▪ Relação de Bens e Equipamentos sem Nota Fiscal a serem Incluídos",
+            "Adicione bens e equipamentos sem nota fiscal, caso existam."
         )
         
         # Inicializar lista de equipamentos
