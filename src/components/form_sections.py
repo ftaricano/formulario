@@ -10,24 +10,46 @@ class FormSectionRenderer:
     @staticmethod
     def render_field_with_search(label: str, field_name: str, 
                                 help_text: str = "", placeholder: str = "") -> Tuple[str, bool]:
-        """Renderiza campo de texto com botão de busca"""
-        col1, col2 = st.columns([5, 1])
+        """Renderiza campo de texto com busca automática ao completar digitação"""
+        # Campo de texto normal
+        value = st.text_input(
+            label,
+            value=st.session_state.get(field_name, ''),
+            help=help_text,
+            placeholder=placeholder,
+            key=field_name
+        )
         
-        with col1:
-            value = st.text_input(
-                label,
-                value=st.session_state.get(field_name, ''),
-                help=help_text,
-                placeholder=placeholder,
-                key=field_name
-            )
+        # Verificar se o valor mudou e fazer busca automática
+        search_triggered = False
+        last_value_key = f"{field_name}_last_value"
         
-        with col2:
-            st.markdown("<br>", unsafe_allow_html=True)
-            button_key = f"buscar_{field_name}"
-            button_pressed = st.button("🔍", key=button_key, use_container_width=True)
+        # Se o valor mudou desde a última verificação
+        if value != st.session_state.get(last_value_key, ''):
+            st.session_state[last_value_key] = value
+            
+            # Limpar indicador de busca anterior quando o valor muda
+            if field_name == 'cnpj':
+                # Remover flags de busca anterior para permitir nova busca
+                keys_to_remove = [k for k in st.session_state.keys() if k.startswith('cnpj_searched_')]
+                for key in keys_to_remove:
+                    del st.session_state[key]
+            elif field_name == 'cep':
+                # Remover flags de busca anterior para permitir nova busca
+                keys_to_remove = [k for k in st.session_state.keys() if k.startswith('cep_searched_')]
+                for key in keys_to_remove:
+                    del st.session_state[key]
+            
+            # Se o campo tem valor e é válido, fazer busca automática
+            if value.strip():
+                if field_name == 'cnpj' and FormValidator.validar_cnpj(value):
+                    search_triggered = True
+                    ApiSearchHandler.handle_cnpj_search_auto(value)
+                elif field_name == 'cep' and FormValidator.validar_cep(value):
+                    search_triggered = True
+                    ApiSearchHandler.handle_cep_search_auto(value)
         
-        return value, button_pressed
+        return value, search_triggered
     
     @staticmethod
     def render_section_header(title: str, description: str):
@@ -74,7 +96,7 @@ class EquipamentosSection:
                 tipo = st.text_input(
                     f"Tipo {i+1}",
                     value=equipamento.get("tipo", ""),
-                    placeholder="Ex: Eletrônico, Móvel",
+                    placeholder="Ex: Geladeira, Microondas, etc.",
                     key=f"tipo_equip_{i}",
                     label_visibility="collapsed"
                 )
@@ -84,7 +106,7 @@ class EquipamentosSection:
                 descricao = st.text_input(
                     f"Descrição {i+1}",
                     value=equipamento.get("descricao", ""),
-                    placeholder="Descrição detalhada",
+                    placeholder="Marca/Modelo",
                     key=f"desc_equip_{i}",
                     label_visibility="collapsed"
                 )
@@ -94,7 +116,7 @@ class EquipamentosSection:
                 valor = st.text_input(
                     f"Valor {i+1}",
                     value=equipamento.get("valor", ""),
-                    placeholder="1.000,00",
+                    placeholder="R$ 1.000,00",
                     key=f"valor_equip_{i}",
                     label_visibility="collapsed"
                 )
@@ -116,7 +138,19 @@ class EquipamentosSection:
         col1, col2, col3 = st.columns([1, 1, 1])
         
         with col2:
-            if st.button("➕ Adicionar Item", key="add_equipamento", use_container_width=True):
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] > button {
+                white-space: nowrap !important;
+                width: 100% !important;
+                min-width: 220px !important;
+                padding: 0.5rem 0.8rem !important;
+                font-size: 0.9rem !important;
+                overflow: hidden !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            if st.button("Adicionar Outro Equipamento", key="add_equipamento", use_container_width=True):
                 EquipamentosSection._adicionar_equipamento()
                 st.rerun()
         
@@ -169,7 +203,7 @@ class ApiSearchHandler:
     
     @staticmethod
     def handle_cnpj_search(cnpj: str, button_pressed: bool):
-        """Manipula busca de CNPJ"""
+        """Manipula busca de CNPJ (mantido para compatibilidade)"""
         if button_pressed and cnpj:
             if FormValidator.validar_cnpj(cnpj):
                 with st.spinner("▪ Buscando dados do CNPJ..."):
@@ -186,7 +220,7 @@ class ApiSearchHandler:
     
     @staticmethod
     def handle_cep_search(cep: str, button_pressed: bool):
-        """Manipula busca de CEP"""
+        """Manipula busca de CEP (mantido para compatibilidade)"""
         if button_pressed and cep:
             if FormValidator.validar_cep(cep):
                 with st.spinner("▪ Buscando endereço..."):
@@ -202,4 +236,48 @@ class ApiSearchHandler:
                     else:
                         st.warning("⚠ CEP não encontrado")
             else:
-                st.error("✗ CEP deve estar no formato 00000-000") 
+                st.error("✗ CEP deve estar no formato 00000-000")
+    
+    @staticmethod
+    def handle_cnpj_search_auto(cnpj: str):
+        """Manipula busca automática de CNPJ"""
+        # Verificar se já foi buscado para evitar buscas repetidas
+        search_key = f"cnpj_searched_{cnpj}"
+        if st.session_state.get(search_key, False):
+            return
+            
+        if cnpj and FormValidator.validar_cnpj(cnpj):
+            with st.spinner("🔍 Buscando dados do CNPJ automaticamente..."):
+                razao_social = ApiService.buscar_cnpj(cnpj)
+                if razao_social:
+                    st.session_state['razao_social_busca'] = razao_social
+                    st.session_state[search_key] = True
+                    st.success(f"✅ CNPJ encontrado automaticamente: {razao_social}")
+                    st.rerun()
+                else:
+                    st.session_state[search_key] = True
+                    st.info("ℹ️ CNPJ não encontrado na base de dados")
+    
+    @staticmethod
+    def handle_cep_search_auto(cep: str):
+        """Manipula busca automática de CEP"""
+        # Verificar se já foi buscado para evitar buscas repetidas
+        search_key = f"cep_searched_{cep}"
+        if st.session_state.get(search_key, False):
+            return
+            
+        if cep and FormValidator.validar_cep(cep):
+            with st.spinner("🔍 Buscando endereço automaticamente..."):
+                endereco = ApiService.buscar_cep(cep)
+                
+                if endereco:
+                    # Armazenar dados do endereço com chaves específicas
+                    for campo, valor in endereco.items():
+                        st.session_state[f'{campo}_busca'] = valor
+                    
+                    st.session_state[search_key] = True
+                    st.success("✅ Endereço encontrado e preenchido automaticamente")
+                    st.rerun()
+                else:
+                    st.session_state[search_key] = True
+                    st.info("ℹ️ CEP não encontrado") 

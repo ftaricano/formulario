@@ -56,10 +56,26 @@ class FormularioApp:
         """Oculta elementos do cabeçalho padrão do Streamlit"""
         st.markdown("""
         <style>
-        div[data-testid="stHeader"] {
+        div[data-testid="stHeader"],
+        header[data-testid="stHeader"],
+        .stApp > header,
+        .main-header {
             visibility: hidden !important;
             height: 0 !important;
+            min-height: 0 !important;
+            max-height: 0 !important;
             display: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        
+        /* Remove qualquer fundo branco superior */
+        body, html, #root, .stApp {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            border-top: none !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -106,11 +122,11 @@ class FormularioApp:
             "Informe os dados do estabelecimento que será segurado"
         )
         
-        # CNPJ com busca
-        cnpj, buscar_cnpj_btn = FormSectionRenderer.render_field_with_search(
+        # CNPJ com busca automática
+        cnpj, cnpj_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CNPJ *",
             field_name="cnpj",
-            help_text="Digite o CNPJ (14 dígitos)",
+            help_text="Digite o CNPJ (14 dígitos) - A busca será feita automaticamente",
             placeholder="00.000.000/0000-00"
         )
         
@@ -118,15 +134,15 @@ class FormularioApp:
         razao_social = st.text_input(
             "▪ Razão Social",
             value=st.session_state.get('razao_social_busca', ''),
-            help="Preenchido automaticamente após buscar CNPJ",
+            help="Preenchido automaticamente após digitar o CNPJ",
             key="razao_social"
         )
         
-        # CEP com busca
-        cep, buscar_cep_btn = FormSectionRenderer.render_field_with_search(
+        # CEP com busca automática
+        cep, cep_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CEP *",
             field_name="cep",
-            help_text="Digite o CEP no formato 00000-000",
+            help_text="Digite o CEP no formato 00000-000 - A busca será feita automaticamente",
             placeholder="00000-000"
         )
         
@@ -163,9 +179,7 @@ class FormularioApp:
             key="estado"
         )
         
-        # Handlers para buscas automáticas
-        ApiSearchHandler.handle_cnpj_search(cnpj, buscar_cnpj_btn)
-        ApiSearchHandler.handle_cep_search(cep, buscar_cep_btn)
+        # Buscas automáticas são processadas dentro do render_field_with_search
     
     def renderizar_identificacao_responsavel(self):
         """Renderiza seção de identificação do responsável"""

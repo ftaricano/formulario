@@ -195,7 +195,19 @@ class EnhancedEquipamentosSection:
         col1, col2, col3 = st.columns([1, 1, 1])
         
         with col2:
-            if st.button("➕ Adicionar Item", key="add_equipamento", 
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] > button {
+                white-space: nowrap !important;
+                width: 100% !important;
+                min-width: 220px !important;
+                padding: 0.5rem 0.8rem !important;
+                font-size: 0.9rem !important;
+                overflow: hidden !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            if st.button("Adicionar Outro Equipamento", key="add_equipamento", 
                         use_container_width=True, type="secondary"):
                 if self.controller.adicionar_equipamento():
                     st.rerun()
