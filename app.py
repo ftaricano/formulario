@@ -302,7 +302,7 @@ class FormularioApp:
             </thead>
             <tbody>
                 <tr>
-                    <td class="coverage-name">Incêndio, Raio e Explosão</td>
+                    <td class="coverage-name">Incêndio, Raio e Explosão*</td>
                     <td>250.000</td>
                     <td>400.000</td>
                     <td>700.000</td>
@@ -360,6 +360,8 @@ class FormularioApp:
             </tbody>
         </table>
         """, unsafe_allow_html=True)
+        
+        st.markdown("<p style='font-size: 0.75rem; color: #555; margin-top: 5px;'>*Valor total em risco do conteúdo do quiosque a ser segurado.</p>", unsafe_allow_html=True)
     
     def renderizar_calculo_vigencia(self, plano_selecionado: str):
         """Renderiza cálculo de vigência e valores"""
