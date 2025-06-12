@@ -2,6 +2,34 @@
 
 Sistema web completo e moderno para adesão de seguros com interface elegante, validações automáticas e cálculo de prêmio pró-rata em tempo real.
 
+## 🚀 **Início Rápido**
+
+### **Opção 1: Script Automático (Recomendado)**
+```bash
+./start_app.sh
+```
+
+### **Opção 2: Manual**
+```bash
+# Ativar ambiente virtual
+source venv_formulario/bin/activate
+
+# Executar aplicação
+streamlit run app.py
+
+# Desativar ambiente (quando terminar)
+deactivate
+```
+
+### **📦 Dependências do Projeto**
+- **streamlit** (1.45.1) - Framework web para a aplicação
+- **requests** (2.32.4) - Para requisições HTTP (APIs de CNPJ/CEP)
+- **sendgrid** (6.12.4) - Para envio de emails
+- **holidays** (0.74) - Para cálculo de feriados brasileiros
+- **jinja2** (3.1.6) - Para templates de email
+
+---
+
 ## ✨ Visão Geral
 
 **Formulário de Adesão de Seguro Incêndio Conteúdos - Cessionários** é uma aplicação web desenvolvida em Streamlit com design moderno, validações robustas e experiência de usuário otimizada.
@@ -31,6 +59,7 @@ Sistema web completo e moderno para adesão de seguros com interface elegante, v
 - **Telefone** com formatação automática
 
 ### **3. 🛡️ Seleção do Plano**
+- **Tabela de coberturas** exibida primeiro para comparação
 - **Radio buttons horizontais** com design moderno
 - **Gradiente preto** quando selecionado
 - **3 opções de cobertura** com valores claros
@@ -60,29 +89,6 @@ Sistema web completo e moderno para adesão de seguros com interface elegante, v
 - **Feedback visual** de sucesso/erro
 - **Preservação de dados** em caso de erro
 
-## 🎨 Design e Interface
-
-### **🖤 Identidade Visual**
-- **Gradiente preto principal**: `linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)`
-- **Botões consistentes** com mesmo gradiente em todo o formulário
-- **Seções de valor** com destaque elegante
-- **Typography**: Fonte Poppins em todo o sistema
-- **Animações suaves** com efeitos glow
-
-### **📱 Responsividade**
-- **Layout adaptativo** para desktop, tablet e mobile
-- **Seções compactas** com espaçamentos otimizados
-- **Radio buttons sempre horizontais** com scroll se necessário
-- **Tipografia responsiva** com clamp()
-- **Padding e margin reduzidos** para melhor aproveitamento da tela
-
-### **✨ Experiência do Usuário**
-- **Seções organizadas** com títulos claros
-- **Feedback visual** para todos os estados
-- **Botões de busca** com ícones intuitivos
-- **Animações suaves** para transições
-- **Design clean** sem elementos desnecessários
-
 ## 🛡️ Planos e Coberturas
 
 ### 📊 **Tabela Completa de Coberturas**
@@ -108,6 +114,66 @@ Sistema web completo e moderno para adesão de seguros com interface elegante, v
 - **Fórmula**: (Prêmio Anual ÷ 365) × Dias Restantes
 - **Considerações**: Próximo dia útil, feriados, fins de semana
 
+## 🔧 **Gerenciamento do Ambiente**
+
+### **Comandos Úteis**
+
+#### Verificar dependências instaladas
+```bash
+source venv_formulario/bin/activate
+pip list
+```
+
+#### Instalar nova dependência
+```bash
+source venv_formulario/bin/activate
+pip install nova_biblioteca
+pip freeze > requirements.txt  # Atualizar arquivo de dependências
+```
+
+#### Recriar ambiente (se necessário)
+```bash
+rm -rf venv_formulario
+python -m venv venv_formulario
+source venv_formulario/bin/activate
+pip install -r requirements.txt
+```
+
+### **🛠️ Solução de Problemas**
+
+Se encontrar problemas:
+
+1. **Reativar ambiente**:
+   ```bash
+   source venv_formulario/bin/activate
+   ```
+
+2. **Reinstalar dependências**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Verificar se está no ambiente correto**:
+   ```bash
+   which python  # Deve mostrar o caminho do venv_formulario
+   ```
+
+4. **Recriar ambiente** (última opção):
+   ```bash
+   rm -rf venv_formulario
+   python -m venv venv_formulario
+   source venv_formulario/bin/activate
+   pip install -r requirements.txt
+   ```
+
+### **✅ Vantagens do Ambiente Virtual**
+
+- **Isolamento**: Dependências separadas do sistema
+- **Controle de versão**: Versões específicas das bibliotecas
+- **Reprodutibilidade**: Mesmo ambiente em qualquer máquina
+- **Limpeza**: Apenas bibliotecas necessárias
+- **Segurança**: Evita conflitos com outros projetos
+
 ## 🏗️ Arquitetura Técnica
 
 ### 📁 **Estrutura do Projeto**
@@ -117,6 +183,8 @@ formulario/
 ├── config.py                           # Configurações e constantes
 ├── styles.css                          # Estilos CSS personalizados
 ├── requirements.txt                    # Dependências Python
+├── start_app.sh                        # Script de inicialização
+├── venv_formulario/                    # Ambiente virtual isolado
 ├── logo.png                            # Logo da empresa
 ├── .gitignore                          # Arquivos ignorados pelo Git
 ├── README.md                           # Documentação (este arquivo)
@@ -178,6 +246,29 @@ formulario/
 - **`FileValidator`**: Validação de arquivos
 - **Validações**: CPF, CNPJ, CEP, Email, Telefone
 
+## 🎨 Design e Interface
+
+### **🖤 Identidade Visual**
+- **Gradiente preto principal**: `linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%)`
+- **Botões consistentes** com mesmo gradiente em todo o formulário
+- **Seções de valor** com destaque elegante
+- **Typography**: Fonte Poppins em todo o sistema
+- **Animações suaves** com efeitos glow
+
+### **📱 Responsividade**
+- **Layout adaptativo** para desktop, tablet e mobile
+- **Seções compactas** com espaçamentos otimizados
+- **Radio buttons sempre horizontais** com scroll se necessário
+- **Tipografia responsiva** com clamp()
+- **Padding e margin reduzidos** para melhor aproveitamento da tela
+
+### **✨ Experiência do Usuário**
+- **Seções organizadas** com títulos claros
+- **Feedback visual** para todos os estados
+- **Botões de busca** com ícones intuitivos
+- **Animações suaves** para transições
+- **Design clean** sem elementos desnecessários
+
 ## 🎨 Sistema de Estilos
 
 ### **🖤 Gradientes e Cores**
@@ -200,222 +291,72 @@ formulario/
 --spacing-lg: clamp(1rem, 3vw, 1.5rem);       /* 16-24px */
 ```
 
-### **✨ Animações e Efeitos**
-- **Glow effect**: Para botões e seções especiais
-- **Hover transitions**: Elevação e mudança de sombra
-- **Slide animations**: Para entrada de elementos
-- **Cubic-bezier**: Para animações suaves e naturais
+### **🎯 Classes CSS Principais**
+```css
+/* Cards e seções */
+.main-card { /* Seções principais */ }
+.value-section { /* Seções de valor com gradiente */ }
+.equipment-row { /* Linhas de equipamentos */ }
 
-## 🔧 Configuração e Instalação
+/* Botões */
+.primary-button { /* Botão principal preto */ }
+.secondary-button { /* Botões secundários */ }
+.add-button { /* Botão adicionar equipamento */ }
 
-### 📋 **Pré-requisitos**
-- Python 3.8 ou superior
-- pip (gerenciador de pacotes Python)
-
-### 🚀 **Instalação Rápida**
-
-1. **Clone o repositório**
-```bash
-git clone <url-do-repositorio>
-cd formulario
+/* Elementos de formulário */
+.form-section { /* Seções do formulário */ }
+.field-group { /* Grupos de campos */ }
+.radio-horizontal { /* Radio buttons horizontais */ }
 ```
 
-2. **Instale as dependências**
-```bash
-pip install -r requirements.txt
-```
+## 📱 **Otimizações Mobile**
 
-3. **Execute a aplicação**
-```bash
-streamlit run app.py
-```
-
-4. **Acesse no navegador**
-```
-http://localhost:8501
-```
-
-### 📦 **Dependências**
-```python
-streamlit>=1.28.0    # Framework web
-requests>=2.31.0     # Requisições HTTP para APIs
-python-dateutil      # Manipulação de datas
-holidays             # Cálculo de feriados brasileiros
-```
-
-### 🌐 **Execução em Rede Local**
-```bash
-streamlit run app.py --server.address 0.0.0.0 --server.port 8501
-```
-
-## ⚙️ Configurações
-
-### 📅 **Datas e Vigência**
-```python
-# config.py
-DATA_FINAL_VIGENCIA = datetime(2024, 12, 31)  # Final da vigência
-TIMEZONE = 'America/Sao_Paulo'                # Fuso horário brasileiro
-```
-
-### 💰 **Planos de Seguro**
-```python
-# config.py
-PLANOS_SEGURO = {
-    "Opção 1 (R$ 250.000)": 2505.53,
-    "Opção 2 (R$ 400.000)": 4008.85,
-    "Opção 3 (R$ 700.000)": 7015.49
-}
-```
-
-### 🎨 **Configurações de Interface**
-```python
-# config.py
-APP_CONFIG = {
-    "page_title": "Formulário de Adesão - Seguro Incêndio",
-    "page_icon": "🛡️",
-    "layout": "wide",
-    "initial_sidebar_state": "collapsed"
-}
-```
-
-## 🔍 Validações Implementadas
-
-### **📋 Validações de Campos**
-- ✅ **CPF**: Formato e dígitos verificadores
-- ✅ **CNPJ**: Formato e validação de dígitos
-- ✅ **CEP**: Formato brasileiro (XXXXX-XXX)
-- ✅ **Email**: Validação RFC compliant
-- ✅ **Telefone**: 10 ou 11 dígitos com DDD
-- ✅ **Nome**: Mínimo 2 palavras, máximo 120 caracteres
-
-### **📁 Validações de Arquivo**
-- ✅ **Tipos permitidos**: JPG, JPEG, PNG, PDF, XLSX
-- ✅ **Tamanho individual**: Máximo 10MB por arquivo
-- ✅ **Tamanho total**: Máximo 25MB
-- ✅ **Sanitização**: Verificação de conteúdo
-
-### **🔗 Integrações com APIs**
-- ✅ **CNPJ**: Busca automática na Receita Federal
-- ✅ **CEP**: Busca automática de endereço via ViaCEP
-- ✅ **Cache**: Sistema LRU para otimização
-- ✅ **Fallback**: Tratamento de erros graceful
-
-## 🎯 Funcionalidades Avançadas
-
-### **📊 Cálculo Dinâmico**
-- **Prêmio pró-rata** baseado em dias restantes
-- **Consideração de feriados** brasileiros
-- **Próximo dia útil** para data de inclusão
-- **Formatação monetária** brasileira (R$ X.XXX,XX)
-
-### **🎨 Design Responsivo**
-- **Mobile-first** approach
-- **Breakpoints**: 768px (tablet) e 1024px (desktop)
-- **Radio buttons horizontais** sempre visíveis
-- **Seções compactas** para melhor UX
+### **🎯 Interface Responsiva**
+- **Typography fluida** com `clamp()` para diferentes telas
+- **Espaçamentos adaptativos** que se ajustam ao viewport
+- **Radio buttons** sempre horizontais com scroll lateral
+- **Upload de arquivos** otimizado para mobile
+- **Tabelas responsivas** com scroll horizontal
 
 ### **⚡ Performance**
-- **Lazy loading** de componentes
-- **Cache de APIs** com TTL
-- **Componentes reutilizáveis**
-- **CSS otimizado** com variáveis
+- **CSS otimizado** com variáveis e reutilização
+- **Componentes modulares** para carregamento eficiente
+- **Validações assíncronas** que não bloqueiam a interface
+- **Estados de loading** para feedback visual
 
-### **🛡️ Segurança**
+## 🌐 **APIs e Integrações**
+
+### **🔍 Busca Automática**
+- **CNPJ**: Integração com Receita Federal
+- **CEP**: Busca de endereços via ViaCEP
+- **Validações**: CPF, CNPJ, Email em tempo real
+
+### **📧 Sistema de Email**
+- **SendGrid**: Envio de emails profissionais
+- **Templates HTML**: Emails formatados e responsivos
+- **Anexos**: Suporte a múltiplos arquivos
+
+## 🔐 **Segurança e Validações**
+
+### **✅ Validações Implementadas**
+- **CPF**: Validação completa com dígitos verificadores
+- **CNPJ**: Validação completa com dígitos verificadores
+- **Email**: Validação RFC compliant
+- **Telefone**: Formatação e validação brasileira
+- **CEP**: Formato e existência
+- **Arquivos**: Tipos permitidos e tamanhos máximos
+
+### **🛡️ Medidas de Segurança**
 - **Sanitização** de inputs
-- **Validação server-side**
-- **Tratamento de exceções**
-- **No sensitive data** em logs
-
-## 🚀 Deploy e Produção
-
-### **☁️ Streamlit Cloud (Recomendado)**
-1. Fork do repositório no GitHub
-2. Conectar no Streamlit Cloud
-3. Deploy automático
-4. URL pública disponível
-
-### **🐳 Docker**
-```dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-EXPOSE 8501
-CMD ["streamlit", "run", "app.py"]
-```
-
-### **🖥️ Servidor Local**
-```bash
-# Instalação como serviço systemd
-sudo systemctl enable formulario.service
-sudo systemctl start formulario.service
-```
-
-## 📈 Melhorias Implementadas
-
-### **🎨 Design Moderno (v2.0)**
-- ✅ **Gradiente preto elegante** em todos os botões
-- ✅ **Seções de valor** com destaque especial
-- ✅ **Radio buttons** com design sofisticado
-- ✅ **Espaçamentos otimizados** para melhor UX
-- ✅ **Responsividade aprimorada** em todos os dispositivos
-- ✅ **Animações suaves** com efeitos glow
-
-### **📱 Interface Otimizada**
-- ✅ **Ordem lógica** das seções (planos antes de bens)
-- ✅ **Seções compactas** com menos espaçamento
-- ✅ **Radio buttons sempre horizontais**
-- ✅ **Botões uniformes** com gradiente consistente
-- ✅ **Texto limpo** sem emojis nas seções finais
-
-### **🔧 Arquitetura Modular**
-- ✅ **Separação de responsabilidades**
-- ✅ **Componentes reutilizáveis**
-- ✅ **Templates HTML** para emails
-- ✅ **Sistema de validação** robusto
-- ✅ **Gerenciamento de estado** avançado
-
-## 📞 Suporte
-
-Para suporte técnico ou dúvidas sobre o sistema:
-- **Email**: suporte@orla-rio.com
-- **Horário**: Segunda a Sexta, 9h às 18h
-
-## 📄 Licença
-
-Este projeto é propriedade da **ORLA RIO** e destina-se ao uso interno para processos de adesão de seguros.
+- **Validação server-side** de todos os dados
+- **Controle de upload** com limites de tamanho
+- **Filtragem** de tipos de arquivo permitidos
 
 ---
 
-**🛡️ Sistema de Adesão de Seguro Incêndio - ORLA RIO**  
-*Versão 2.0 - Interface Moderna com Gradientes Pretos*  
-*Desenvolvido com ❤️ usando Streamlit e Python*
+## 📞 **Suporte**
 
-## 📧 Configuração de Email (SendGrid)
+Para dúvidas ou problemas técnicos, entre em contato com a equipe de desenvolvimento.
 
-Para habilitar o envio de emails, você precisa configurar o SendGrid:
-
-### 1. Obter API Key do SendGrid
-1. Crie uma conta no [SendGrid](https://sendgrid.com/)
-2. Gere uma API Key no painel administrativo
-3. Configure a API Key no sistema
-
-### 2. Configuração Local
-Crie o arquivo `.streamlit/secrets.toml`:
-```toml
-SENDGRID_API_KEY = "SG.sua_api_key_aqui"
-```
-
-### 3. Configuração em Produção
-- **Streamlit Cloud**: Adicione `SENDGRID_API_KEY` nas configurações de secrets
-- **Heroku**: Configure como variável de ambiente
-- **Docker**: Use variável de ambiente `SENDGRID_API_KEY`
-
-### 4. Personalizar Emails
-Edite o arquivo `src/services/email_service.py` para configurar:
-- Email de origem (`from_email`)
-- Email de destino (`to_email`)
-- Assunto do email (`subject`)
-
-## 🚀 Instalação e Execução 
+**Versão**: 2.0  
+**Última atualização**: Janeiro 2025

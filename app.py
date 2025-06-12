@@ -198,6 +198,12 @@ class FormularioApp:
             "Escolha uma das opções de cobertura disponíveis."
         )
         
+        # Mostrar tabela de coberturas ANTES da seleção
+        self._renderizar_tabela_coberturas()
+        
+        st.markdown("---")
+        st.markdown("**💰 Escolha seu Plano:**")
+        
         # Criar opções formatadas
         plano_opcoes = []
         for plano, preco in PLANOS_SEGURO.items():
@@ -212,16 +218,12 @@ class FormularioApp:
             horizontal=True
         )
         
-        # Adicionar tabela de coberturas após seleção
-        if plano_selecionado:
-            self._renderizar_tabela_coberturas()
-        
         return plano_selecionado
     
     def _renderizar_tabela_coberturas(self):
         """Renderiza tabela compacta de coberturas otimizada para mobile"""
-        st.markdown("---")
         st.markdown("**📋 Coberturas Incluídas nos Planos:**")
+        st.markdown("*Compare as opções e valores de cobertura disponíveis:*")
         
         # Tabela responsiva com CSS customizado
         st.markdown("""
