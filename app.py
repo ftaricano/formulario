@@ -126,8 +126,8 @@ class FormularioApp:
         cnpj, cnpj_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CNPJ *",
             field_name="cnpj",
-            help_text="Digite o CNPJ (14 dígitos) - A razão social será preenchida automaticamente",
-            placeholder="00.000.000/0000-00"
+            help_text="Digite apenas os 14 números do CNPJ - A razão social será preenchida automaticamente",
+            placeholder="Digite apenas números (14 dígitos)"
         )
         
         # Razão social (preenchida automaticamente)
@@ -142,8 +142,8 @@ class FormularioApp:
         cep, cep_searched = FormSectionRenderer.render_field_with_search(
             label="▪ CEP *",
             field_name="cep",
-            help_text="Digite o CEP no formato 00000-000 - O endereço será preenchido automaticamente",
-            placeholder="00000-000"
+            help_text="Digite apenas os 8 números do CEP - O endereço será preenchido automaticamente",
+            placeholder="Digite apenas números (8 dígitos)"
         )
         
         # Campos de endereço
@@ -186,7 +186,7 @@ class FormularioApp:
             "Dados da pessoa responsável pelo seguro."
         )
         
-        cpf = st.text_input("▪ CPF *", placeholder="000.000.000-00", key="cpf")
+        cpf = st.text_input("▪ CPF *", placeholder="Digite apenas números (11 dígitos)", key="cpf")
         nome_completo = st.text_input("▪ Nome Completo *", key="nome_completo")
         email = st.text_input("▪ E-mail *", key="email")
         telefone = st.text_input("▪ Telefone *", placeholder="(11) 99999-9999", key="telefone")

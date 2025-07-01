@@ -73,15 +73,15 @@ class FormValidator:
         
         cpf = dados.get('cpf', '').strip()
         if cpf and not cls.validar_cpf(cpf):
-            erros.append("CPF deve estar no formato 000.000.000-00")
+            erros.append("CPF deve conter exatamente 11 números")
         
         cnpj = dados.get('cnpj', '').strip()
         if cnpj and not cls.validar_cnpj(cnpj):
-            erros.append("CNPJ deve estar no formato 00.000.000/0000-00")
+            erros.append("CNPJ deve conter exatamente 14 números")
         
         cep = dados.get('cep', '').strip()
         if cep and not cls.validar_cep(cep):
-            erros.append("CEP deve estar no formato 00000-000")
+            erros.append("CEP deve conter exatamente 8 números")
         
         nome = dados.get('nome_completo', '').strip()
         if nome and not cls.validar_nome_completo(nome):

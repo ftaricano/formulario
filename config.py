@@ -49,9 +49,9 @@ APP_CONFIG = {
 
 MENSAGENS = {
     "logo_nao_encontrado": "⚠️ Logo não encontrado.",
-    "cnpj_invalido": "❌ CNPJ inválido",
-    "cpf_invalido": "❌ CPF inválido",
-    "cep_invalido": "❌ CEP inválido",
+    "cnpj_invalido": "❌ CNPJ deve conter apenas 14 números",
+    "cpf_invalido": "❌ CPF deve conter apenas 11 números",
+    "cep_invalido": "❌ CEP deve conter apenas 8 números",
     "timeout_cnpj": "⏱️ Timeout na consulta do CNPJ. Tente novamente.",
     "timeout_cep": "⏱️ Timeout na consulta do CEP. Tente novamente.",
     "cep_nao_encontrado": "❌ CEP não encontrado."
