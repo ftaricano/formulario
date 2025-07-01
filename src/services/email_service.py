@@ -1,6 +1,6 @@
 import os
 import base64
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
@@ -134,7 +134,7 @@ class EmailService:
                 'equipamentos': dados.get('equipamentos', []),
                 'equipamentos_html': len(dados.get('equipamentos', [])) > 0,
                 'arquivos': dados.get('arquivos_info', []),
-                'timestamp': datetime.now().strftime('%d/%m/%Y às %H:%M:%S'),
+                'timestamp': self._obter_horario_brasileiro(),
                 'incluir_outro_quiosque': dados.get('incluir_outro_quiosque', False),
                 'grupo_info': dados.get('grupo_info', {})
             }
@@ -219,4 +219,18 @@ class EmailService:
         """Formata CEP com máscara"""
         if len(cep) == 8:
             return f"{cep[:5]}-{cep[5:]}"
-        return cep 
+        return cep
+    
+    @staticmethod
+    def _obter_horario_brasileiro() -> str:
+        """
+        Obtém o horário atual no fuso horário brasileiro (GMT-3)
+        Funciona independentemente do fuso horário do servidor
+        """
+        # Fuso horário brasileiro (GMT-3)
+        tz_brasil = timezone(timedelta(hours=-3))
+        
+        # Obter horário atual em UTC e converter para horário brasileiro
+        horario_br = datetime.now(timezone.utc).astimezone(tz_brasil)
+        
+        return horario_br.strftime('%d/%m/%Y às %H:%M:%S') 
