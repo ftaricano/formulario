@@ -43,10 +43,17 @@ class EmailService:
             sendgrid_config.get('from_email', "noreply@cpzseg.com.br")
         )
         
-        self.to_email = (
+        # Suporte a múltiplos destinatários (separados por vírgula)
+        emails_destino = (
             os.getenv('SENDGRID_EMAIL_DESTINO') or
             sendgrid_config.get('email_destino', "informe@cpzseg.com.br")
         )
+        
+        # Converter string de emails em lista (remove espaços e filtra emails vazios)
+        if isinstance(emails_destino, str):
+            self.to_emails = [email.strip() for email in emails_destino.split(',') if email.strip()]
+        else:
+            self.to_emails = [emails_destino] if emails_destino else ["informe@cpzseg.com.br"]
         
         self.from_name = (
             os.getenv('SENDGRID_FROM_NAME') or
@@ -76,10 +83,10 @@ class EmailService:
             else:
                 subject = self.subject
             
-            # Criar email
+            # Criar email com múltiplos destinatários
             message = Mail(
                 from_email=(self.from_email, self.from_name),
-                to_emails=self.to_email,
+                to_emails=self.to_emails,  # Agora usa lista de emails
                 subject=subject,
                 html_content=html_content
             )
